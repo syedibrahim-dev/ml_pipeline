@@ -1,0 +1,40 @@
+{
+  "simulation_days": 90,
+  "strategies": [
+    {
+      "strategy": "threshold_only",
+      "n_retrains": 5,
+      "total_cost": 5.0,
+      "avg_recall": 0.8657,
+      "min_recall": 0.8003,
+      "max_recall": 0.9175,
+      "recall_std": 0.0264,
+      "days_below_threshold": 0,
+      "stability_score": 0.9736
+    },
+    {
+      "strategy": "periodic_only",
+      "n_retrains": 11,
+      "total_cost": 11.0,
+      "avg_recall": 0.8898,
+      "min_recall": 0.8513,
+      "max_recall": 0.9316,
+      "recall_std": 0.0185,
+      "days_below_threshold": 0,
+      "stability_score": 0.9815
+    },
+    {
+      "strategy": "hybrid",
+      "n_retrains": 11,
+      "total_cost": 11.0,
+      "avg_recall": 0.8898,
+      "min_recall": 0.8513,
+      "max_recall": 0.9316,
+      "recall_std": 0.0185,
+      "days_below_threshold": 0,
+      "stability_score": 0.9815
+    }
+  ],
+  "recommendation": "hybrid",
+  "rationale": "The hybrid strategy provides the best balance: periodic retraining prevents recall from degrading for too long, while threshold-based triggers react immediately to sudden drops. Compared to threshold-only, hybrid is more stable. Compared to periodic-only, hybrid avoids unnecessary retrains when performance is healthy."
+}

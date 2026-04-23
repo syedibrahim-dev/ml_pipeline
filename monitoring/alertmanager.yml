@@ -1,0 +1,26 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  group_by: ['alertname', 'category']
+  group_wait: 10s
+  group_interval: 10m
+  repeat_interval: 3h
+  receiver: 'default-receiver'
+
+  routes:
+    - match:
+        severity: critical
+      receiver: 'critical-receiver'
+      continue: true
+
+receivers:
+  - name: 'default-receiver'
+    # In production: configure email/Slack/PagerDuty here
+    # For development: alerts are visible in Grafana + AlertManager UI
+
+  - name: 'critical-receiver'
+    # Critical alerts also trigger CI/CD retraining webhook
+    # webhook_configs:
+    #   - url: 'http://your-cicd-webhook/retrain'
+    #     send_resolved: false

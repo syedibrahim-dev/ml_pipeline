@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fraud-detection
+  labels:
+    # Label so Prometheus can discover pods in this namespace
+    monitoring: enabled
+    app.kubernetes.io/managed-by: kubectl

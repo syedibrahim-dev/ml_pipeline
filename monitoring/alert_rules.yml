@@ -1,0 +1,130 @@
+groups:
+  # ------------------------------------------------------------------ #
+  # Model-Level Alerts                                                   #
+  # ------------------------------------------------------------------ #
+  - name: fraud_model_alerts
+    rules:
+
+      # Fraud recall dropped below 80% threshold
+      - alert: FraudRecallDrop
+        expr: fraud_recall_current < 0.80
+        for: 5m
+        labels:
+          severity: critical
+          category: model_performance
+        annotations:
+          summary: "Fraud recall dropped below 80%"
+          description: >
+            The fraud detection model recall is {{ $value | humanizePercentage }},
+            which is below the 80% operational threshold.
+            This means fraudulent transactions are being missed.
+            Trigger: automatic retraining pipeline.
+
+      # AUC/Recall degradation warning (soft alert before critical)
+      - alert: FraudRecallWarning
+        expr: fraud_recall_current < 0.85
+        for: 10m
+        labels:
+          severity: warning
+          category: model_performance
+        annotations:
+          summary: "Fraud recall approaching critical threshold"
+          description: >
+            Fraud recall is {{ $value | humanizePercentage }}.
+            Performance is degrading. Consider retraining soon.
+
+  # ------------------------------------------------------------------ #
+  # Data Drift Alerts                                                    #
+  # ------------------------------------------------------------------ #
+  - name: data_drift_alerts
+    rules:
+
+      # Feature drift exceeds KS threshold of 0.1
+      - alert: FeatureDriftDetected
+        expr: feature_drift_score > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          category: data_drift
+        annotations:
+          summary: "Data drift detected for feature {{ $labels.feature }}"
+          description: >
+            KS statistic for feature '{{ $labels.feature }}' is {{ $value }},
+            exceeding the 0.1 drift threshold.
+            This indicates the input distribution has changed from training data.
+
+      # Severe drift
+      - alert: SevereFeatureDrift
+        expr: feature_drift_score > 0.25
+        for: 2m
+        labels:
+          severity: critical
+          category: data_drift
+        annotations:
+          summary: "Severe data drift detected – retraining required"
+          description: >
+            KS statistic for feature '{{ $labels.feature }}' is {{ $value }},
+            indicating severe distribution shift. Automated retraining triggered.
+
+      # High missing value rate in incoming data
+      - alert: HighMissingValueRate
+        expr: feature_missing_value_rate > 0.3
+        for: 5m
+        labels:
+          severity: warning
+          category: data_quality
+        annotations:
+          summary: "High missing value rate for feature {{ $labels.feature }}"
+          description: >
+            Feature '{{ $labels.feature }}' has {{ $value | humanizePercentage }}
+            missing values in recent requests.
+
+  # ------------------------------------------------------------------ #
+  # API / System Alerts                                                  #
+  # ------------------------------------------------------------------ #
+  - name: api_system_alerts
+    rules:
+
+      # High error rate (5xx responses)
+      - alert: HighErrorRate
+        expr: |
+          rate(fraud_api_requests_total{status="500"}[5m]) /
+          rate(fraud_api_requests_total[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          category: system
+        annotations:
+          summary: "High error rate on Fraud API"
+          description: >
+            Error rate is {{ $value | humanizePercentage }} over the last 5 minutes.
+            Investigate API logs immediately.
+
+      # API latency spike (P95 > 1 second)
+      - alert: HighAPILatency
+        expr: |
+          histogram_quantile(0.95,
+            rate(fraud_api_request_duration_seconds_bucket[5m])
+          ) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+          category: system
+        annotations:
+          summary: "API P95 latency exceeds 1 second"
+          description: >
+            95th percentile latency is {{ $value }}s.
+            Investigate potential performance bottleneck.
+
+      # API is down (no successful requests in 2 minutes)
+      - alert: FraudAPIDown
+        expr: up{job="fraud-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: system
+        annotations:
+          summary: "Fraud Detection API is DOWN"
+          description: >
+            The fraud detection API is not responding.
+            Immediate attention required.

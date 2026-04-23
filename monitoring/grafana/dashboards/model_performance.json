@@ -1,0 +1,160 @@
+{
+  "uid": "fraud-model-performance",
+  "title": "2. Model Performance Dashboard",
+  "description": "Fraud recall, false positive rate, prediction confidence distribution, fraud detection rate",
+  "tags": ["fraud-detection", "model"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "1m",
+  "time": {"from": "now-3h", "to": "now"},
+  "panels": [
+    {
+      "id": 1,
+      "type": "gauge",
+      "title": "Fraud Recall (Current)",
+      "description": "Current model recall – must stay above 80%",
+      "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0},
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "fraud_recall_current",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red",    "value": null},
+              {"color": "yellow", "value": 0.75},
+              {"color": "green",  "value": 0.85}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": "gauge",
+      "title": "False Positive Rate (Current)",
+      "description": "Current FPR – lower is better (fewer false alarms)",
+      "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0},
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "fraud_false_positive_rate",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green",  "value": null},
+              {"color": "yellow", "value": 0.05},
+              {"color": "red",    "value": 0.15}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Fraud Recall Over Time",
+      "description": "Trend of model recall – alerts fire if below 80% for 5+ minutes",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "fraud_recall_current",
+          "legendFormat": "Fraud Recall",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red",   "value": null},
+              {"color": "green", "value": 0.80}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Fraud Detection Rate (predictions per minute)",
+      "description": "How many fraud predictions are being made over time",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "rate(fraud_detected_total[1m])",
+          "legendFormat": "Fraud Detections/min",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {"unit": "ops"}
+      }
+    },
+    {
+      "id": 5,
+      "type": "heatmap",
+      "title": "Prediction Confidence Distribution",
+      "description": "Distribution of fraud probability scores across all predictions",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "rate(fraud_prediction_probability_bucket[5m])",
+          "legendFormat": "{{le}}",
+          "refId": "A",
+          "format": "heatmap"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Precision–Recall Trade-off Over Time",
+      "description": "Tracks both precision (FP cost) and recall (FN cost) simultaneously",
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16},
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "fraud_recall_current",
+          "legendFormat": "Recall (fraud sensitivity)",
+          "refId": "A"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "1 - fraud_false_positive_rate",
+          "legendFormat": "Specificity (1 - FPR)",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "n_samples_explained": 1000,
+  "top_20_features": [
+    {
+      "feature": "C1",
+      "mean_abs_shap": 0.1121872216463089
+    },
+    {
+      "feature": "C4",
+      "mean_abs_shap": 0.10967093706130981
+    },
+    {
+      "feature": "C9",
+      "mean_abs_shap": 0.10819550603628159
+    },
+    {
+      "feature": "C2",
+      "mean_abs_shap": 0.10795273631811142
+    },
+    {
+      "feature": "V8",
+      "mean_abs_shap": 0.09902763366699219
+    },
+    {
+      "feature": "D3",
+      "mean_abs_shap": 0.09711762517690659
+    },
+    {
+      "feature": "V3",
+      "mean_abs_shap": 0.09577637910842896
+    },
+    {
+      "feature": "V34",
+      "mean_abs_shap": 0.0941511020064354
+    },
+    {
+      "feature": "V27",
+      "mean_abs_shap": 0.09380842745304108
+    },
+    {
+      "feature": "V22",
+      "mean_abs_shap": 0.0934508666396141
+    },
+    {
+      "feature": "V14",
+      "mean_abs_shap": 0.09066568315029144
+    },
+    {
+      "feature": "V36",
+      "mean_abs_shap": 0.09035000205039978
+    },
+    {
+      "feature": "C6",
+      "mean_abs_shap": 0.09002735465765
+    },
+    {
+      "feature": "C10",
+      "mean_abs_shap": 0.08901114761829376
+    },
+    {
+      "feature": "V9",
+      "mean_abs_shap": 0.08843538910150528
+    },
+    {
+      "feature": "V42",
+      "mean_abs_shap": 0.08817178010940552
+    },
+    {
+      "feature": "C7",
+      "mean_abs_shap": 0.08782587945461273
+    },
+    {
+      "feature": "addr1",
+      "mean_abs_shap": 0.08735005557537079
+    },
+    {
+      "feature": "V11",
+      "mean_abs_shap": 0.08551584184169769
+    },
+    {
+      "feature": "V38",
+      "mean_abs_shap": 0.08253680914640427
+    }
+  ],
+  "interpretation": "The model flags a transaction as fraud primarily based on the features listed above. High SHAP values indicate that when these features deviate from the norm, they strongly push the model's prediction toward 'fraud'. Key signals are often transaction amount, card frequency patterns, and time-related V-features."
+}

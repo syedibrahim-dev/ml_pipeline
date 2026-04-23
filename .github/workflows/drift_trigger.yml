@@ -1,0 +1,199 @@
+name: Scheduled Drift Check & Auto-Retrain
+
+on:
+  # Run daily at 06:00 UTC
+  schedule:
+    - cron: '0 6 * * *'
+  # Allow manual trigger with optional parameters
+  workflow_dispatch:
+    inputs:
+      force_retrain:
+        description: 'Force model retraining regardless of drift'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['true', 'false']
+      drift_threshold:
+        description: 'KS drift threshold override (default: 0.15)'
+        required: false
+        default: '0.15'
+
+env:
+  PYTHON_VERSION: "3.10"
+
+jobs:
+
+  # ------------------------------------------------------------------ #
+  # Job 1: Check drift and performance                                  #
+  # ------------------------------------------------------------------ #
+  scheduled-drift-check:
+    name: "Scheduled Drift Check"
+    runs-on: ubuntu-latest
+
+    outputs:
+      drift_detected:   ${{ steps.check.outputs.drift_detected }}
+      performance_drop: ${{ steps.check.outputs.performance_drop }}
+      max_ks_stat:      ${{ steps.check.outputs.max_ks_stat }}
+      should_retrain:   ${{ steps.check.outputs.should_retrain }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install pandas==2.2.3 numpy==1.26.4 scikit-learn==1.6.1 \
+                      xgboost==2.1.3 scipy==1.14.1 matplotlib==3.9.2 joblib
+
+      - name: Run drift simulation
+        run: |
+          mkdir -p results/metrics results/plots
+          python drift/simulate_drift.py \
+            --simulate \
+            --output results/metrics/drift_report.json
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Parse drift report and set outputs
+        id: check
+        run: |
+          python -c "
+          import json, os
+          with open('results/metrics/drift_report.json') as f:
+              r = json.load(f)
+
+          drift_detected   = str(r.get('drift_detected', False)).lower()
+          performance_drop = str(r.get('performance_drop', False)).lower()
+          max_ks           = str(r.get('max_ks_stat', 0.0))
+          force            = '${{ github.event.inputs.force_retrain }}' == 'true'
+          threshold        = float('${{ github.event.inputs.drift_threshold }}' or '0.15')
+
+          should_retrain = (
+              r.get('drift_detected', False) or
+              r.get('performance_drop', False) or
+              r.get('max_ks_stat', 0) > threshold or
+              force
+          )
+
+          # Write to GitHub outputs
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f'drift_detected={drift_detected}\n')
+              f.write(f'performance_drop={performance_drop}\n')
+              f.write(f'max_ks_stat={max_ks}\n')
+              f.write(f'should_retrain={str(should_retrain).lower()}\n')
+
+          print(f'Drift detected  : {drift_detected}')
+          print(f'Performance drop: {performance_drop}')
+          print(f'Max KS stat     : {max_ks}')
+          print(f'Should retrain  : {should_retrain}')
+          "
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Upload daily drift report
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-drift-report-${{ github.run_number }}
+          path: |
+            results/metrics/drift_report.json
+            results/plots/drift_*.png
+          retention-days: 7
+
+  # ------------------------------------------------------------------ #
+  # Job 2: Auto-retrain if drift/performance drop detected              #
+  # ------------------------------------------------------------------ #
+  auto-retrain:
+    name: "Auto Retrain (triggered by drift)"
+    needs: scheduled-drift-check
+    runs-on: ubuntu-latest
+    if: needs.scheduled-drift-check.outputs.should_retrain == 'true'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install all dependencies
+        run: |
+          pip install kfp==2.9.0 pandas==2.2.3 numpy==1.26.4 \
+                      scikit-learn==1.6.1 xgboost==2.1.3 lightgbm==4.5.0 \
+                      imbalanced-learn==0.13.0 shap==0.46.0 scipy==1.14.1 \
+                      matplotlib==3.9.2 seaborn==0.13.2 joblib
+
+      - name: Log retraining trigger reason
+        run: |
+          echo "=== AUTO-RETRAINING TRIGGERED ==="
+          echo "Drift detected  : ${{ needs.scheduled-drift-check.outputs.drift_detected }}"
+          echo "Performance drop: ${{ needs.scheduled-drift-check.outputs.performance_drop }}"
+          echo "Max KS stat     : ${{ needs.scheduled-drift-check.outputs.max_ks_stat }}"
+          echo "Force retrain   : ${{ github.event.inputs.force_retrain }}"
+          echo "=================================="
+
+      - name: Recompile Kubeflow pipeline
+        run: |
+          python pipelines/fraud_pipeline.py --output-dir pipelines/compiled
+          echo "[auto-retrain] Pipeline recompiled for retraining run"
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Trigger Kubeflow retraining pipeline
+        run: |
+          if [ -n "${{ secrets.KFP_ENDPOINT }}" ]; then
+            python -c "
+          import sys
+          sys.path.insert(0, '.')
+          from pipelines.fraud_pipeline import submit_pipeline
+          submit_pipeline(
+              pipeline_yaml='pipelines/compiled/fraud_detection_pipeline.yaml',
+              kfp_endpoint='${{ secrets.KFP_ENDPOINT }}',
+              run_name='auto-retrain-${{ github.run_number }}',
+              experiment_name='fraud-detection-auto-retrain',
+          )
+          print('[auto-retrain] Retraining pipeline submitted to Kubeflow')
+          "
+          else
+            echo "[auto-retrain] KFP_ENDPOINT not configured – simulating local retraining"
+            mkdir -p results/metrics results/models results/plots
+            python run_pipeline.py --task models
+          fi
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Run retraining strategy analysis
+        run: |
+          mkdir -p results/metrics results/plots
+          python drift/retraining_strategy.py \
+            --days 30 \
+            --output results/metrics
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Upload retraining artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: retraining-artifacts-${{ github.run_number }}
+          path: |
+            pipelines/compiled/fraud_detection_pipeline.yaml
+            results/metrics/retraining_strategy_comparison.json
+          retention-days: 30
+
+      - name: Create retraining summary
+        run: |
+          echo "## Automated Retraining Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Trigger | Drift/Performance Drop |" >> $GITHUB_STEP_SUMMARY
+          echo "| Drift Detected | ${{ needs.scheduled-drift-check.outputs.drift_detected }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Performance Drop | ${{ needs.scheduled-drift-check.outputs.performance_drop }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Max KS Stat | ${{ needs.scheduled-drift-check.outputs.max_ks_stat }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Run Number | ${{ github.run_number }} |" >> $GITHUB_STEP_SUMMARY

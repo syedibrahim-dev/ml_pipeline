@@ -1,0 +1,125 @@
+{
+  "uid": "fraud-data-drift",
+  "title": "3. Data Drift Dashboard",
+  "description": "Feature distribution shifts, KS test statistics, missing value trends, and drift alerts",
+  "tags": ["fraud-detection", "drift"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "2m",
+  "time": {"from": "now-6h", "to": "now"},
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Feature Drift Scores (KS Statistics)",
+      "description": "KS statistic per feature. Values > 0.1 trigger a drift warning alert.",
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 0},
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "feature_drift_score",
+          "legendFormat": "{{feature}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green",  "value": null},
+              {"color": "yellow", "value": 0.10},
+              {"color": "red",    "value": 0.25}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": "bargauge",
+      "title": "Current Drift Scores – All Features",
+      "description": "Bar chart of KS drift scores for each monitored feature (latest value)",
+      "gridPos": {"h": 10, "w": 12, "x": 0, "y": 10},
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "feature_drift_score",
+          "legendFormat": "{{feature}}",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green",  "value": null},
+              {"color": "yellow", "value": 0.10},
+              {"color": "red",    "value": 0.25}
+            ]
+          }
+        }
+      },
+      "options": {
+        "orientation": "horizontal",
+        "reduceOptions": {"calcs": ["lastNotNull"]}
+      }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Missing Value Rate Trend",
+      "description": "Rate of missing values per feature in incoming requests",
+      "gridPos": {"h": 10, "w": 12, "x": 12, "y": 10},
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "feature_missing_value_rate",
+          "legendFormat": "{{feature}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green",  "value": null},
+              {"color": "yellow", "value": 0.10},
+              {"color": "red",    "value": 0.30}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "alertlist",
+      "title": "Active Drift Alerts",
+      "description": "List of currently firing drift-related alerts",
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 20},
+      "options": {
+        "alertName": "",
+        "dashboardAlerts": false,
+        "groupBy": [],
+        "groupMode": "default",
+        "maxItems": 20,
+        "sortOrder": 1,
+        "stateFilter": {
+          "error": true,
+          "firing": true,
+          "noData": false,
+          "normal": false,
+          "pending": true
+        },
+        "labels": "category=data_drift"
+      }
+    }
+  ]
+}

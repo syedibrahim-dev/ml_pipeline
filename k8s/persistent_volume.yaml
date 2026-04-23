@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: fraud-detection-pv
+  labels:
+    type: local
+    app: fraud-detection
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  # hostPath is suitable for minikube single-node clusters
+  hostPath:
+    path: "/mnt/fraud-data"
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fraud-data-pvc
+  namespace: fraud-detection
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+# Separate PVC for pipeline artifact root (used by Kubeflow pipelines)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: fraud-pipeline-root-pv
+  labels:
+    type: local
+    app: fraud-detection
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/mnt/fraud-pipeline-root"
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fraud-pipeline-root-pvc
+  namespace: fraud-detection
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi

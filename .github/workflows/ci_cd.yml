@@ -1,0 +1,283 @@
+name: Fraud Detection MLOps CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:   # allow manual trigger
+
+env:
+  PYTHON_VERSION: "3.10"
+  IMAGE_NAME: fraud-detection-api
+  DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/fraud-detection-api
+
+# ============================================================
+# Stage 1: Continuous Integration
+# Trigger: code push / pull request
+# Tasks: lint, unit tests, data validation checks
+# ============================================================
+jobs:
+  lint-and-test:
+    name: "Stage 1 – CI: Lint + Tests + Data Validation"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install CI dependencies
+        run: |
+          pip install --upgrade pip
+          pip install flake8 black pytest pytest-cov
+          # Install core ML deps (without heavy packages for speed)
+          pip install pandas==2.2.3 numpy==1.26.4 scikit-learn==1.6.1 \
+                      xgboost==2.1.3 lightgbm==4.5.0 imbalanced-learn==0.13.0 \
+                      shap==0.46.0 scipy==1.14.1 matplotlib==3.9.2 seaborn==0.13.2 \
+                      fastapi==0.115.0 httpx==0.27.2 uvicorn==0.32.1 \
+                      prometheus-client==0.21.0 joblib
+
+      - name: Lint with flake8
+        run: |
+          # Stop on syntax errors; warn on style issues
+          flake8 components/ api/ drift/ tests/ \
+            --max-line-length=120 \
+            --ignore=E501,W503,W504 \
+            --count \
+            --statistics
+
+      - name: Check formatting with black
+        run: |
+          black --check --diff \
+            components/ api/ drift/ tests/ pipelines/ \
+            --line-length=120 \
+            || echo "Black formatting issues found (non-blocking for now)"
+
+      - name: Run unit tests with coverage
+        run: |
+          pytest tests/ -v \
+            --tb=short \
+            --cov=components \
+            --cov=api \
+            --cov=drift \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            -x
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage.xml
+
+      - name: Data validation syntax check
+        run: |
+          python -c "
+          import sys
+          sys.path.insert(0, '.')
+          from components.data_ingestion    import data_ingestion
+          from components.data_validation   import data_validation
+          from components.preprocessing     import preprocessing
+          from components.feature_engineering import feature_engineering
+          from components.model_training    import model_training
+          from components.model_evaluation  import model_evaluation
+          from components.model_deployment  import model_deployment
+          print('[CI] All 7 KFP components imported successfully')
+          "
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+  # ============================================================
+  # Stage 2: Build & Packaging
+  # Trigger: CI passes on main branch
+  # Tasks: build Docker image, push to registry
+  # ============================================================
+  docker-build:
+    name: "Stage 2 – Build: Docker Image"
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    # Only push when merging to main and DockerHub secrets are available
+    if: |
+      github.ref == 'refs/heads/main' &&
+      github.event_name != 'pull_request'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        # Guard: only run if DockerHub credentials are configured
+        if: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_IMAGE }}
+          tags: |
+            type=sha,prefix=sha-
+            type=ref,event=branch
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build and push Docker image (training)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          dockerfile: Dockerfile
+          push: ${{ secrets.DOCKERHUB_USERNAME != '' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify Docker image builds (no-push fallback)
+        if: ${{ secrets.DOCKERHUB_USERNAME == '' }}
+        run: |
+          docker build -t fraud-detection-api:test .
+          echo "[Stage 2] Docker image built locally (no push – DockerHub secrets not configured)"
+
+  # ============================================================
+  # Stage 3: Continuous Deployment
+  # Trigger: Docker build succeeds
+  # Tasks: compile Kubeflow pipeline, trigger pipeline run
+  # ============================================================
+  pipeline-deploy:
+    name: "Stage 3 – CD: Kubeflow Pipeline Compile + Deploy"
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install pipeline dependencies
+        run: |
+          pip install kfp==2.9.0 pandas==2.2.3 numpy==1.26.4 \
+                      scikit-learn==1.6.1 xgboost==2.1.3 lightgbm==4.5.0 \
+                      imbalanced-learn==0.13.0 shap==0.46.0 scipy==1.14.1 \
+                      matplotlib==3.9.2 seaborn==0.13.2 joblib
+
+      - name: Compile Kubeflow pipeline YAML
+        run: |
+          python pipelines/fraud_pipeline.py --output-dir pipelines/compiled
+          echo "[Stage 3] Pipeline compiled successfully"
+          ls -lh pipelines/compiled/
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Upload compiled pipeline as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fraud-detection-pipeline-yaml
+          path: pipelines/compiled/fraud_detection_pipeline.yaml
+          retention-days: 30
+
+      - name: Trigger Kubeflow pipeline run (if endpoint configured)
+        run: |
+          if [ -n "${{ secrets.KFP_ENDPOINT }}" ]; then
+            python -c "
+          import sys
+          sys.path.insert(0, '.')
+          from pipelines.fraud_pipeline import submit_pipeline
+          submit_pipeline(
+              pipeline_yaml='pipelines/compiled/fraud_detection_pipeline.yaml',
+              kfp_endpoint='${{ secrets.KFP_ENDPOINT }}',
+              run_name='ci-run-${{ github.run_number }}',
+          )
+          "
+          else
+            echo "[Stage 3] KFP_ENDPOINT not set – skipping remote submission"
+            echo "[Stage 3] Pipeline YAML available as GitHub artifact"
+          fi
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+  # ============================================================
+  # Stage 4: Intelligent Trigger
+  # Trigger: after deployment, or on schedule
+  # Tasks: check for performance drop / data drift
+  #        auto-trigger retraining if threshold exceeded
+  # ============================================================
+  drift-check:
+    name: "Stage 4 – Intelligent: Drift & Performance Check"
+    needs: pipeline-deploy
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install pandas==2.2.3 numpy==1.26.4 scikit-learn==1.6.1 \
+                      xgboost==2.1.3 scipy==1.14.1 matplotlib==3.9.2 joblib
+
+      - name: Run drift simulation and check
+        id: drift
+        run: |
+          mkdir -p results/metrics results/plots
+          python drift/simulate_drift.py \
+            --simulate \
+            --output results/metrics/drift_report.json
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Evaluate drift report
+        id: evaluate
+        run: |
+          python -c "
+          import json, sys
+          with open('results/metrics/drift_report.json') as f:
+              r = json.load(f)
+          drift_detected  = r.get('drift_detected', False)
+          perf_drop       = r.get('performance_drop', False)
+          max_ks          = r.get('max_ks_stat', 0)
+          print(f'Drift detected  : {drift_detected}')
+          print(f'Performance drop: {perf_drop}')
+          print(f'Max KS statistic: {max_ks:.4f}')
+          if drift_detected or perf_drop:
+              print('ACTION: Retraining triggered due to drift/performance degradation')
+              # In production: trigger retraining workflow via GitHub API or KFP
+          else:
+              print('STATUS: Model is healthy. No retraining needed.')
+          sys.exit(0)
+          "
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Upload drift report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: drift-report
+          path: |
+            results/metrics/drift_report.json
+            results/plots/drift_*.png

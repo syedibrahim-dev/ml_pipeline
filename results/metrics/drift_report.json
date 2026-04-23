@@ -1,0 +1,559 @@
+{
+  "simulation_summary": {
+    "n_early_rows": 17500,
+    "n_late_rows": 7500,
+    "early_fraud_rate": 0.0353,
+    "late_fraud_rate": 0.0543
+  },
+  "natural_temporal_drift": {
+    "n_features_checked": 30,
+    "n_drifted": 2,
+    "drifted_features": [
+      "card1",
+      "V5"
+    ],
+    "max_ks_stat": 0.13,
+    "drift_detected": true,
+    "feature_scores": {
+      "TransactionAmt": {
+        "ks_statistic": 0.06,
+        "p_value": 0.329358,
+        "drifted": false,
+        "ref_mean": 502.867,
+        "curr_mean": 344.1688
+      },
+      "card1": {
+        "ks_statistic": 0.096,
+        "p_value": 0.019894,
+        "drifted": true,
+        "ref_mean": 9415.906,
+        "curr_mean": 10238.594
+      },
+      "card2": {
+        "ks_statistic": 0.044,
+        "p_value": 0.718919,
+        "drifted": false,
+        "ref_mean": 354.208,
+        "curr_mean": 349.782
+      },
+      "addr1": {
+        "ks_statistic": 0.03,
+        "p_value": 0.97825,
+        "drifted": false,
+        "ref_mean": 303.396,
+        "curr_mean": 302.71
+      },
+      "C1": {
+        "ks_statistic": 0.044,
+        "p_value": 0.718919,
+        "drifted": false,
+        "ref_mean": 255.11,
+        "curr_mean": 258.228
+      },
+      "C2": {
+        "ks_statistic": 0.046,
+        "p_value": 0.665922,
+        "drifted": false,
+        "ref_mean": 243.25,
+        "curr_mean": 250.032
+      },
+      "C3": {
+        "ks_statistic": 0.054,
+        "p_value": 0.459923,
+        "drifted": false,
+        "ref_mean": 267.46,
+        "curr_mean": 258.06
+      },
+      "C4": {
+        "ks_statistic": 0.042,
+        "p_value": 0.770437,
+        "drifted": false,
+        "ref_mean": 251.252,
+        "curr_mean": 245.472
+      },
+      "C5": {
+        "ks_statistic": 0.04,
+        "p_value": 0.819151,
+        "drifted": false,
+        "ref_mean": 243.614,
+        "curr_mean": 247.5
+      },
+      "C6": {
+        "ks_statistic": 0.056,
+        "p_value": 0.413486,
+        "drifted": false,
+        "ref_mean": 256.524,
+        "curr_mean": 248.876
+      },
+      "C7": {
+        "ks_statistic": 0.066,
+        "p_value": 0.226347,
+        "drifted": false,
+        "ref_mean": 256.354,
+        "curr_mean": 248.812
+      },
+      "C8": {
+        "ks_statistic": 0.034,
+        "p_value": 0.935112,
+        "drifted": false,
+        "ref_mean": 251.764,
+        "curr_mean": 256.7
+      },
+      "D1": {
+        "ks_statistic": 0.046,
+        "p_value": 0.665922,
+        "drifted": false,
+        "ref_mean": 147.912,
+        "curr_mean": 148.15
+      },
+      "D2": {
+        "ks_statistic": 0.036,
+        "p_value": 0.902691,
+        "drifted": false,
+        "ref_mean": 152.83,
+        "curr_mean": 149.74
+      },
+      "D3": {
+        "ks_statistic": 0.034,
+        "p_value": 0.935112,
+        "drifted": false,
+        "ref_mean": 149.084,
+        "curr_mean": 151.99
+      },
+      "D4": {
+        "ks_statistic": 0.04,
+        "p_value": 0.819151,
+        "drifted": false,
+        "ref_mean": 149.562,
+        "curr_mean": 151.686
+      },
+      "D5": {
+        "ks_statistic": 0.082,
+        "p_value": 0.069301,
+        "drifted": false,
+        "ref_mean": 158.276,
+        "curr_mean": 150.994
+      },
+      "V1": {
+        "ks_statistic": 0.034,
+        "p_value": 0.935112,
+        "drifted": false,
+        "ref_mean": -0.0473,
+        "curr_mean": -0.0222
+      },
+      "V2": {
+        "ks_statistic": 0.034,
+        "p_value": 0.935112,
+        "drifted": false,
+        "ref_mean": 0.0374,
+        "curr_mean": 0.028
+      },
+      "V3": {
+        "ks_statistic": 0.032,
+        "p_value": 0.960301,
+        "drifted": false,
+        "ref_mean": -0.0016,
+        "curr_mean": -0.0415
+      },
+      "V4": {
+        "ks_statistic": 0.048,
+        "p_value": 0.612624,
+        "drifted": false,
+        "ref_mean": -0.008,
+        "curr_mean": -0.0467
+      },
+      "V5": {
+        "ks_statistic": 0.13,
+        "p_value": 0.000421,
+        "drifted": true,
+        "ref_mean": 0.0962,
+        "curr_mean": -0.127
+      },
+      "V6": {
+        "ks_statistic": 0.042,
+        "p_value": 0.770437,
+        "drifted": false,
+        "ref_mean": -0.0093,
+        "curr_mean": -0.0246
+      },
+      "V7": {
+        "ks_statistic": 0.056,
+        "p_value": 0.413486,
+        "drifted": false,
+        "ref_mean": -0.0394,
+        "curr_mean": -0.0163
+      },
+      "V8": {
+        "ks_statistic": 0.048,
+        "p_value": 0.612624,
+        "drifted": false,
+        "ref_mean": 0.0168,
+        "curr_mean": 0.0627
+      },
+      "V9": {
+        "ks_statistic": 0.064,
+        "p_value": 0.257607,
+        "drifted": false,
+        "ref_mean": 0.0093,
+        "curr_mean": -0.0297
+      },
+      "V10": {
+        "ks_statistic": 0.068,
+        "p_value": 0.198042,
+        "drifted": false,
+        "ref_mean": 0.0069,
+        "curr_mean": 0.0605
+      },
+      "V11": {
+        "ks_statistic": 0.068,
+        "p_value": 0.198042,
+        "drifted": false,
+        "ref_mean": 0.0739,
+        "curr_mean": -0.0149
+      },
+      "V12": {
+        "ks_statistic": 0.074,
+        "p_value": 0.129396,
+        "drifted": false,
+        "ref_mean": 0.0282,
+        "curr_mean": -0.0864
+      },
+      "V13": {
+        "ks_statistic": 0.046,
+        "p_value": 0.665922,
+        "drifted": false,
+        "ref_mean": 0.004,
+        "curr_mean": 0.031
+      }
+    }
+  },
+  "injected_pattern_drift": {
+    "n_features_checked": 30,
+    "n_drifted": 3,
+    "drifted_features": [
+      "card1",
+      "V5",
+      "V10"
+    ],
+    "max_ks_stat": 0.118,
+    "drift_detected": true,
+    "feature_scores": {
+      "TransactionAmt": {
+        "ks_statistic": 0.068,
+        "p_value": 0.198042,
+        "drifted": false,
+        "ref_mean": 502.867,
+        "curr_mean": 390.8944
+      },
+      "card1": {
+        "ks_statistic": 0.096,
+        "p_value": 0.019894,
+        "drifted": true,
+        "ref_mean": 9415.906,
+        "curr_mean": 10238.594
+      },
+      "card2": {
+        "ks_statistic": 0.044,
+        "p_value": 0.718919,
+        "drifted": false,
+        "ref_mean": 354.208,
+        "curr_mean": 349.782
+      },
+      "addr1": {
+        "ks_statistic": 0.03,
+        "p_value": 0.97825,
+        "drifted": false,
+        "ref_mean": 303.396,
+        "curr_mean": 302.71
+      },
+      "C1": {
+        "ks_statistic": 0.044,
+        "p_value": 0.718919,
+        "drifted": false,
+        "ref_mean": 255.11,
+        "curr_mean": 258.228
+      },
+      "C2": {
+        "ks_statistic": 0.046,
+        "p_value": 0.665922,
+        "drifted": false,
+        "ref_mean": 243.25,
+        "curr_mean": 250.032
+      },
+      "C3": {
+        "ks_statistic": 0.054,
+        "p_value": 0.459923,
+        "drifted": false,
+        "ref_mean": 267.46,
+        "curr_mean": 258.06
+      },
+      "C4": {
+        "ks_statistic": 0.042,
+        "p_value": 0.770437,
+        "drifted": false,
+        "ref_mean": 251.252,
+        "curr_mean": 245.472
+      },
+      "C5": {
+        "ks_statistic": 0.04,
+        "p_value": 0.819151,
+        "drifted": false,
+        "ref_mean": 243.614,
+        "curr_mean": 247.5
+      },
+      "C6": {
+        "ks_statistic": 0.056,
+        "p_value": 0.413486,
+        "drifted": false,
+        "ref_mean": 256.524,
+        "curr_mean": 248.876
+      },
+      "C7": {
+        "ks_statistic": 0.066,
+        "p_value": 0.226347,
+        "drifted": false,
+        "ref_mean": 256.354,
+        "curr_mean": 248.812
+      },
+      "C8": {
+        "ks_statistic": 0.034,
+        "p_value": 0.935112,
+        "drifted": false,
+        "ref_mean": 251.764,
+        "curr_mean": 256.7
+      },
+      "D1": {
+        "ks_statistic": 0.046,
+        "p_value": 0.665922,
+        "drifted": false,
+        "ref_mean": 147.912,
+        "curr_mean": 148.15
+      },
+      "D2": {
+        "ks_statistic": 0.036,
+        "p_value": 0.902691,
+        "drifted": false,
+        "ref_mean": 152.83,
+        "curr_mean": 149.74
+      },
+      "D3": {
+        "ks_statistic": 0.034,
+        "p_value": 0.935112,
+        "drifted": false,
+        "ref_mean": 149.084,
+        "curr_mean": 151.99
+      },
+      "D4": {
+        "ks_statistic": 0.04,
+        "p_value": 0.819151,
+        "drifted": false,
+        "ref_mean": 149.562,
+        "curr_mean": 151.686
+      },
+      "D5": {
+        "ks_statistic": 0.082,
+        "p_value": 0.069301,
+        "drifted": false,
+        "ref_mean": 158.276,
+        "curr_mean": 150.994
+      },
+      "V1": {
+        "ks_statistic": 0.052,
+        "p_value": 0.508917,
+        "drifted": false,
+        "ref_mean": -0.0473,
+        "curr_mean": 0.0208
+      },
+      "V2": {
+        "ks_statistic": 0.046,
+        "p_value": 0.665922,
+        "drifted": false,
+        "ref_mean": 0.0374,
+        "curr_mean": 0.086
+      },
+      "V3": {
+        "ks_statistic": 0.034,
+        "p_value": 0.935112,
+        "drifted": false,
+        "ref_mean": -0.0016,
+        "curr_mean": 0.0107
+      },
+      "V4": {
+        "ks_statistic": 0.056,
+        "p_value": 0.413486,
+        "drifted": false,
+        "ref_mean": -0.008,
+        "curr_mean": 0.0061
+      },
+      "V5": {
+        "ks_statistic": 0.118,
+        "p_value": 0.001877,
+        "drifted": true,
+        "ref_mean": 0.0962,
+        "curr_mean": -0.0726
+      },
+      "V6": {
+        "ks_statistic": 0.064,
+        "p_value": 0.257607,
+        "drifted": false,
+        "ref_mean": -0.0093,
+        "curr_mean": 0.0393
+      },
+      "V7": {
+        "ks_statistic": 0.06,
+        "p_value": 0.329358,
+        "drifted": false,
+        "ref_mean": -0.0394,
+        "curr_mean": 0.0389
+      },
+      "V8": {
+        "ks_statistic": 0.068,
+        "p_value": 0.198042,
+        "drifted": false,
+        "ref_mean": 0.0168,
+        "curr_mean": 0.1212
+      },
+      "V9": {
+        "ks_statistic": 0.04,
+        "p_value": 0.819151,
+        "drifted": false,
+        "ref_mean": 0.0093,
+        "curr_mean": 0.0298
+      },
+      "V10": {
+        "ks_statistic": 0.088,
+        "p_value": 0.041586,
+        "drifted": true,
+        "ref_mean": 0.0069,
+        "curr_mean": 0.1208
+      },
+      "V11": {
+        "ks_statistic": 0.068,
+        "p_value": 0.198042,
+        "drifted": false,
+        "ref_mean": 0.0739,
+        "curr_mean": -0.0149
+      },
+      "V12": {
+        "ks_statistic": 0.074,
+        "p_value": 0.129396,
+        "drifted": false,
+        "ref_mean": 0.0282,
+        "curr_mean": -0.0864
+      },
+      "V13": {
+        "ks_statistic": 0.046,
+        "p_value": 0.665922,
+        "drifted": false,
+        "ref_mean": 0.004,
+        "curr_mean": 0.031
+      }
+    }
+  },
+  "feature_importance_shift": {
+    "top_shifted_features": {
+      "V5": {
+        "early": 0.01045,
+        "late": 0.121191,
+        "delta": 0.110741
+      },
+      "V2": {
+        "early": 0.028006,
+        "late": 0.118379,
+        "delta": 0.090373
+      },
+      "V8": {
+        "early": 0.023131,
+        "late": 0.087546,
+        "delta": 0.064415
+      },
+      "TransactionAmt": {
+        "early": 0.022656,
+        "late": 0.08546,
+        "delta": 0.062804
+      },
+      "V4": {
+        "early": 0.020742,
+        "late": 0.078764,
+        "delta": 0.058022
+      },
+      "V10": {
+        "early": 0.028928,
+        "late": 0.073256,
+        "delta": 0.044328
+      },
+      "D2": {
+        "early": 0.048164,
+        "late": 0.004121,
+        "delta": -0.044043
+      },
+      "V3": {
+        "early": 0.011473,
+        "late": 0.055485,
+        "delta": 0.044013
+      },
+      "C2": {
+        "early": 0.041298,
+        "late": 0.007802,
+        "delta": -0.033496
+      },
+      "V9": {
+        "early": 0.023885,
+        "late": 0.055211,
+        "delta": 0.031325
+      }
+    },
+    "n_features_compared": 47
+  },
+  "performance_over_time": [
+    {
+      "window": 1,
+      "t_start": 46,
+      "t_end": 3110382,
+      "n_samples": 4964,
+      "fraud_rate": 0.0349,
+      "recall": 0.5838,
+      "auc_roc": 0.9199
+    },
+    {
+      "window": 2,
+      "t_start": 3110382,
+      "t_end": 6220718,
+      "n_samples": 4966,
+      "fraud_rate": 0.0326,
+      "recall": 0.6667,
+      "auc_roc": 0.9308
+    },
+    {
+      "window": 3,
+      "t_start": 6220718,
+      "t_end": 9331054,
+      "n_samples": 4995,
+      "fraud_rate": 0.0354,
+      "recall": 0.7062,
+      "auc_roc": 0.934
+    },
+    {
+      "window": 4,
+      "t_start": 9331054,
+      "t_end": 12441390,
+      "n_samples": 5069,
+      "fraud_rate": 0.0371,
+      "recall": 0.4202,
+      "auc_roc": 0.7516
+    },
+    {
+      "window": 5,
+      "t_start": 12441390,
+      "t_end": 15551726,
+      "n_samples": 5005,
+      "fraud_rate": 0.035,
+      "recall": 0.0914,
+      "auc_roc": 0.5037
+    }
+  ],
+  "drift_detected": true,
+  "performance_drop": true,
+  "max_ks_stat": 0.118,
+  "recommendation": "Monitor closely \u2013 drift detected."
+}

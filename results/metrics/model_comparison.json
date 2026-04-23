@@ -1,0 +1,41 @@
+[
+  {
+    "model_type": "xgboost",
+    "precision": 0.0744,
+    "recall": 0.0763,
+    "f1": 0.0753,
+    "auc_roc": 0.5312,
+    "tp": 9,
+    "fp": 112,
+    "fn": 109,
+    "tn": 3770,
+    "business_cost": 1202.0,
+    "time_s": 15.0
+  },
+  {
+    "model_type": "lightgbm",
+    "precision": 0.0678,
+    "recall": 0.1017,
+    "f1": 0.0814,
+    "auc_roc": 0.5262,
+    "tp": 12,
+    "fp": 165,
+    "fn": 106,
+    "tn": 3717,
+    "business_cost": 1225.0,
+    "time_s": 2.1
+  },
+  {
+    "model_type": "rf_hybrid",
+    "precision": 0.031,
+    "recall": 0.0763,
+    "f1": 0.0441,
+    "auc_roc": 0.4982,
+    "tp": 9,
+    "fp": 281,
+    "fn": 109,
+    "tn": 3601,
+    "business_cost": 1371.0,
+    "time_s": 4.4
+  }
+]
