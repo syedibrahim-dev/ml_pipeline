@@ -109,10 +109,12 @@ jobs:
     name: "Stage 2 – Build: Docker Image"
     needs: lint-and-test
     runs-on: ubuntu-latest
-    # Only push when merging to main and DockerHub secrets are available
     if: |
       github.ref == 'refs/heads/main' &&
       github.event_name != 'pull_request'
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
     steps:
       - name: Checkout repository
@@ -122,8 +124,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub
-        # Guard: only run if DockerHub credentials are configured
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
+        if: env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != ''
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -139,19 +140,20 @@ jobs:
             type=ref,event=branch
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
-      - name: Build and push Docker image (training)
+      - name: Build and push Docker image
+        if: env.DOCKERHUB_USERNAME != ''
         uses: docker/build-push-action@v6
         with:
           context: .
           dockerfile: Dockerfile
-          push: ${{ secrets.DOCKERHUB_USERNAME != '' }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Verify Docker image builds (no-push fallback)
-        if: ${{ secrets.DOCKERHUB_USERNAME == '' }}
+      - name: Build Docker image locally (no push fallback)
+        if: env.DOCKERHUB_USERNAME == ''
         run: |
           docker build -t fraud-detection-api:test .
           echo "[Stage 2] Docker image built locally (no push – DockerHub secrets not configured)"
