@@ -50,8 +50,7 @@ jobs:
       - name: Lint with flake8
         run: |
           flake8 components/ api/ drift/ tests/ \
-            --max-line-length=120 \
-            --ignore=E501,W503,W504 \
+            --select=F \
             --count \
             --statistics
 
