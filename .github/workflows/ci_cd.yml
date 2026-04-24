@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:   # allow manual trigger
+  repository_dispatch: # triggered by AlertManager via fraud-api webhook
+    types:
+      - model-performance-drop   # FraudRecallDrop alert
+      - drift-detected           # FeatureDriftDetected alert
 
 env:
   PYTHON_VERSION: "3.10"
@@ -281,3 +285,67 @@ jobs:
           path: |
             results/metrics/drift_report.json
             results/plots/drift_*.png
+
+  # ============================================================
+  # Stage 5: Intelligent Auto-Retrain
+  # Trigger: AlertManager fires FraudRecallDrop or
+  #          FeatureDriftDetected → fraud-api → GitHub dispatch
+  # ============================================================
+  auto-retrain:
+    name: "Stage 5 – Auto-Retrain (triggered by alert)"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'repository_dispatch'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log trigger reason
+        run: |
+          echo "========================================"
+          echo "Auto-retrain triggered!"
+          echo "Event type : ${{ github.event.action }}"
+          echo "Triggered at: $(date -u)"
+          echo "========================================"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install pandas==2.2.3 numpy==1.26.4 scikit-learn==1.6.1 \
+                      xgboost==2.1.3 lightgbm==4.5.0 imbalanced-learn==0.13.0 \
+                      shap==0.46.0 scipy==1.14.1 matplotlib==3.9.2 joblib
+
+      - name: Retrain models
+        run: |
+          mkdir -p results/metrics results/plots results/models
+          python run_pipeline.py --task models
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Run drift check after retraining
+        run: |
+          python run_pipeline.py --task drift
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Upload retrained model artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: retrained-models-${{ github.run_number }}
+          path: |
+            results/models/
+            results/metrics/
+          retention-days: 30
+
+      - name: Summary
+        run: |
+          echo "### Auto-Retrain Complete" >> $GITHUB_STEP_SUMMARY
+          echo "- **Trigger:** \`${{ github.event.action }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Run:** #${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Models retrained:** XGBoost, LightGBM, RF-Hybrid" >> $GITHUB_STEP_SUMMARY
+          cat results/metrics/model_comparison.json >> $GITHUB_STEP_SUMMARY || true

@@ -302,3 +302,85 @@ def update_model_metrics(recall: float, fpr: float):
 def prometheus_metrics():
     """Expose Prometheus metrics in text format."""
     return Response(content=generate_latest(REGISTRY), media_type=CONTENT_TYPE_LATEST)
+
+
+# ------------------------------------------------------------------ #
+# AlertManager webhook → GitHub Actions trigger                       #
+# ------------------------------------------------------------------ #
+
+ALERT_TRIGGER_COUNT = Counter(
+    "alert_github_trigger_total",
+    "Number of times a GitHub Actions retraining was triggered via alert",
+    ["alert_name", "status"],
+)
+
+
+class AlertManagerWebhook(BaseModel):
+    """AlertManager webhook payload."""
+    alerts: List[Dict[str, Any]] = []
+    status: Optional[str] = None
+
+
+@app.post("/alert/webhook")
+def alert_webhook(payload: AlertManagerWebhook):
+    """
+    Receives AlertManager webhooks and triggers GitHub Actions
+    retraining workflow when FraudRecallDrop or FeatureDriftDetected fires.
+
+    Requires env vars:
+      GITHUB_TOKEN  – Personal Access Token with repo scope
+      GITHUB_REPO   – e.g. syedibrahim-dev/ml_pipeline
+    """
+    import urllib.request
+    import json as json_lib
+
+    github_token = os.environ.get("GITHUB_TOKEN", "")
+    github_repo  = os.environ.get("GITHUB_REPO", "")
+
+    TRIGGER_ALERTS = {"FraudRecallDrop", "FeatureDriftDetected"}
+
+    triggered = []
+    for alert in payload.alerts:
+        alert_name = alert.get("labels", {}).get("alertname", "")
+        alert_status = alert.get("status", "firing")
+
+        if alert_name not in TRIGGER_ALERTS or alert_status != "firing":
+            continue
+
+        event_type = (
+            "model-performance-drop"
+            if alert_name == "FraudRecallDrop"
+            else "drift-detected"
+        )
+
+        if not github_token or not github_repo:
+            print(f"[alert/webhook] {alert_name} fired — GITHUB_TOKEN/GITHUB_REPO not set, skipping trigger")
+            ALERT_TRIGGER_COUNT.labels(alert_name=alert_name, status="skipped").inc()
+            continue
+
+        # Call GitHub repository_dispatch API
+        url  = f"https://api.github.com/repos/{github_repo}/dispatches"
+        body = json_lib.dumps({"event_type": event_type}).encode()
+        req  = urllib.request.Request(
+            url,
+            data=body,
+            headers={
+                "Authorization": f"token {github_token}",
+                "Accept": "application/vnd.github.v3+json",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                print(f"[alert/webhook] Triggered GitHub Actions ({event_type}) — HTTP {resp.status}")
+                ALERT_TRIGGER_COUNT.labels(alert_name=alert_name, status="triggered").inc()
+                triggered.append({"alert": alert_name, "event_type": event_type, "http_status": resp.status})
+        except Exception as e:
+            print(f"[alert/webhook] Failed to trigger GitHub Actions: {e}")
+            ALERT_TRIGGER_COUNT.labels(alert_name=alert_name, status="error").inc()
+
+    return {
+        "received_alerts": len(payload.alerts),
+        "triggered": triggered,
+    }

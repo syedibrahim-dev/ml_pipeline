@@ -19,6 +19,9 @@ services:
       - /tmp/fraud_model_registry:/tmp/fraud_model_registry:ro
     environment:
       - MODEL_REGISTRY=/tmp/fraud_model_registry
+      # GitHub Actions trigger — set these to enable alert → retrain automation
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      - GITHUB_REPO=${GITHUB_REPO:-syedibrahim-dev/ml_pipeline}
     healthcheck:
       test: ["CMD", "python", "-c",
              "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
