@@ -28,7 +28,6 @@ def data_validation(
     """
     import json
     import os
-    import numpy as np
     import pandas as pd
 
     print("[data_validation] Stage 2 – Data Validation starting...")
@@ -60,7 +59,7 @@ def data_validation(
         print(f"[data_validation] FAIL – Missing columns: {missing_cols}")
     else:
         checks_passed += 1
-        print(f"[data_validation] PASS – All required columns present")
+        print("[data_validation] PASS – All required columns present")
 
     # ------------------------------------------------------------------ #
     # Check 2: Target column (isFraud) is binary 0/1                      #
@@ -164,19 +163,9 @@ def data_validation(
     # ------------------------------------------------------------------ #
     # Summary statistics for the report                                   #
     # ------------------------------------------------------------------ #
-    missing_summary = (
-        missing_pct[missing_pct > 0]
-        .sort_values(ascending=False)
-        .head(20)
-        .round(4)
-        .to_dict()
-    )
-
     top_missing = (
         missing_pct.sort_values(ascending=False).head(10).round(4).to_dict()
     )
-
-    col_types = tx_df.dtypes.astype(str).to_dict()
 
     # V-feature group missing rates
     v_cols = [c for c in tx_df.columns if c.startswith("V")]
@@ -220,7 +209,7 @@ def data_validation(
     validation_metrics.log_metric("validation_passed", int(len(issues) == 0))
 
     # Summary print
-    print(f"\n[data_validation] ===== VALIDATION SUMMARY =====")
+    print("\n[data_validation] ===== VALIDATION SUMMARY =====")
     print(f"  Checks passed : {checks_passed}/{checks_total}")
     print(f"  Issues        : {len(issues)}")
     print(f"  Warnings      : {len(warnings)}")

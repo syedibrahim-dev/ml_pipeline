@@ -100,9 +100,8 @@ def model_evaluation(
 
     # Business cost
     total_cost = fn_cost * fn + fp_cost * fp
-    standard_cost = fn + fp  # equal-weight baseline
 
-    print(f"\n[model_evaluation] ===== TEST SET RESULTS =====")
+    print("\n[model_evaluation] ===== TEST SET RESULTS =====")
     print(f"  Precision    : {precision:.4f}")
     print(f"  Recall       : {recall:.4f}  ← fraud recall (key metric)")
     print(f"  F1-score     : {f1:.4f}")

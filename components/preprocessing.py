@@ -76,8 +76,6 @@ def preprocessing(
     c_cols      = [c for c in df.columns if c.startswith("C")]
     d_cols      = [c for c in df.columns if c.startswith("D")]
     m_cols      = [c for c in df.columns if c.startswith("M")]
-    id_num_cols = [c for c in df.columns if c.startswith("id_0") or c.startswith("id_1")
-                   and df[c].dtype in [np.float64, np.float32, np.int64]]
     high_card_cols    = ["card1", "card2", "addr1", "addr2"]
     email_cols        = ["P_emaildomain", "R_emaildomain"]
     low_card_cat_cols = ["ProductCD", "card3", "card4", "card5", "card6", "DeviceType"]
@@ -299,7 +297,7 @@ def preprocessing(
     preprocessing_metrics.log_metric("class_weight_ratio", round(n_neg / n_pos, 2))
     preprocessing_metrics.log_metric("imbalance_method", 1 if imbalance_method == "smote" else 0)
 
-    print(f"\n[preprocessing] ===== PREPROCESSING SUMMARY =====")
+    print("\n[preprocessing] ===== PREPROCESSING SUMMARY =====")
     print(f"  Features       : {len(feature_names)}")
     print(f"  V indicators   : {len(new_indicator_cols)}")
     print(f"  Train rows     : {len(train_out):,}")

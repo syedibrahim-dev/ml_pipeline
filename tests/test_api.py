@@ -124,8 +124,6 @@ class TestPredictEndpoint:
 
 class TestBatchPredictEndpoint:
     def test_batch_predict_returns_200(self, client):
-        txns = [{"features": sample_features()} for _ in range(5)]
-        # Flatten features for batch endpoint
         batch = [sample_features() for _ in range(5)]
         r = client.post("/predict/batch", json={"transactions": batch})
         assert r.status_code == 200

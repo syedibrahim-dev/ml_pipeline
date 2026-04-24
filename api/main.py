@@ -29,7 +29,7 @@ from fastapi.responses import Response
 from prometheus_client import (
     Counter, Gauge, Histogram,
     generate_latest, CONTENT_TYPE_LATEST,
-    CollectorRegistry, REGISTRY,
+    REGISTRY,
 )
 from pydantic import BaseModel
 

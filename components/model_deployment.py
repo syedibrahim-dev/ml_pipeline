@@ -29,8 +29,6 @@ def model_deployment(
     import json
     import os
     import shutil
-    import joblib
-    from pathlib import Path
 
     print("[model_deployment] Stage 7 – Conditional Deployment starting...")
 
@@ -99,7 +97,7 @@ def model_deployment(
 
     else:
         print(f"[model_deployment] REJECT: recall {fraud_recall:.4f} < threshold {recall_threshold:.2f}")
-        print(f"[model_deployment] Model NOT deployed. Keeping existing champion.")
+        print("[model_deployment] Model NOT deployed. Keeping existing champion.")
 
         manifest = {
             "status": "rejected",
@@ -120,7 +118,7 @@ def model_deployment(
     deployment_status.log_metric("recall_threshold", recall_threshold)
     deployment_status.log_metric("auc_roc", round(auc_roc, 4))
 
-    print(f"\n[model_deployment] ===== DEPLOYMENT SUMMARY =====")
+    print("\n[model_deployment] ===== DEPLOYMENT SUMMARY =====")
     print(f"  Status    : {'DEPLOYED' if should_deploy else 'REJECTED'}")
     print(f"  Recall    : {fraud_recall:.4f} (threshold: {recall_threshold:.2f})")
     print(f"  AUC-ROC   : {auc_roc:.4f}")

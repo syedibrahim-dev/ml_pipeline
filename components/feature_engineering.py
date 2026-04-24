@@ -36,7 +36,6 @@ def feature_engineering(
     import json
     import os
     import warnings
-    import numpy as np
     import pandas as pd
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.feature_selection import VarianceThreshold
@@ -67,7 +66,6 @@ def feature_engineering(
         If ref_df is None, df is used (i.e., called with train first).
         """
         df = df.copy()
-        src = ref_df if ref_df is not None else df
 
         # -------------------------------------------------------------- #
         # V-group aggregates (Vesta's published groupings)               #
@@ -163,7 +161,7 @@ def feature_engineering(
     }).sort_values("importance", ascending=False)
 
     top_features = feat_imp_df.head(n_top_features)
-    print(f"[feature_engineering] Top-5 features by RF importance:")
+    print("[feature_engineering] Top-5 features by RF importance:")
     for _, row in top_features.head(5).iterrows():
         print(f"  {row['feature']:<35s}  {row['importance']:.6f}")
 
@@ -197,7 +195,7 @@ def feature_engineering(
         json.dump(report, f, indent=2)
     print(f"[feature_engineering] Importance report -> {feature_importance_report.path}")
 
-    print(f"\n[feature_engineering] ===== FEATURE ENGINEERING SUMMARY =====")
+    print("\n[feature_engineering] ===== FEATURE ENGINEERING SUMMARY =====")
     print(f"  Input features     : {len(fe_cols)}")
     print(f"  After var filter   : {len(kept_cols)}")
     print(f"  New features added : {train_fe.shape[1] - train_df.shape[1]}")

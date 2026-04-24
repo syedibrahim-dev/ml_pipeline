@@ -12,7 +12,6 @@ import os
 import sys
 
 import numpy as np
-import pandas as pd
 import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -179,7 +178,6 @@ class TestLightGBM:
 class TestRFHybrid:
     def test_rf_hybrid_selects_top_features(self, fraud_dataset):
         from sklearn.ensemble import RandomForestClassifier
-        import xgboost as xgb
 
         d = fraud_dataset
         rf = RandomForestClassifier(n_estimators=30, class_weight="balanced",

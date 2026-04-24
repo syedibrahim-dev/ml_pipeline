@@ -55,7 +55,6 @@ def model_training(
     import shap
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.metrics import recall_score, precision_score, f1_score, roc_auc_score
-    from sklearn.model_selection import cross_val_score
 
     warnings.filterwarnings("ignore")
     print(f"[model_training] Stage 5 – Training '{model_type}' "
@@ -201,7 +200,7 @@ def model_training(
 
         # For prediction, replace X with reduced version
         X = X[:, sorted(top_idx)]
-        X_val_for_shap = X_val[:, sorted(top_idx)]
+        X_val = X_val[:, sorted(top_idx)]
         feature_names = top_features
 
     else:
@@ -332,7 +331,7 @@ def model_training(
     train_metrics.log_metric("training_time_s", round(elapsed, 2))
     train_metrics.log_metric("scale_pos_weight", round(cost_spw, 4))
 
-    print(f"\n[model_training] ===== TRAINING SUMMARY =====")
+    print("\n[model_training] ===== TRAINING SUMMARY =====")
     print(f"  Model          : {model_type}")
     print(f"  Cost-sensitive : {use_cost_sensitive} (fn_cost={fn_cost}x)")
     print(f"  Train recall   : {recall:.4f}")

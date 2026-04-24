@@ -21,7 +21,6 @@ import sys
 import warnings
 
 import numpy as np
-import pandas as pd
 
 warnings.filterwarnings("ignore")
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -240,7 +239,7 @@ def compare_strategies(
           f"(stability={best_stability['stability_score']:.4f})")
     print(f"[analysis] Lowest compute cost: '{lowest_cost['strategy']}' "
           f"(cost={lowest_cost['total_cost']:.1f} units)")
-    print(f"\n[analysis] RECOMMENDATION: 'hybrid' strategy balances all three dimensions.")
+    print("\n[analysis] RECOMMENDATION: 'hybrid' strategy balances all three dimensions.")
 
     # Plot
     os.makedirs(output_dir, exist_ok=True)
