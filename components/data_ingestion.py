@@ -67,8 +67,14 @@ def data_ingestion(
 
         # email domains
         domains = [
-            "gmail.com", "yahoo.com", "hotmail.com", "outlook.com",
-            "protonmail.com", "icloud.com", "anonymous.com", np.nan,
+            "gmail.com",
+            "yahoo.com",
+            "hotmail.com",
+            "outlook.com",
+            "protonmail.com",
+            "icloud.com",
+            "anonymous.com",
+            np.nan,
         ]
         p_email = rng.choice(domains, size=n)
         r_email = rng.choice(domains, size=n)
@@ -107,45 +113,46 @@ def data_ingestion(
         v_cols = {f"V{i}": v_data[:, i - 1] for i in range(1, 340)}
 
         # Build transaction DataFrame
-        tx_df = pd.DataFrame({
-            "TransactionID": tx_ids,
-            "isFraud": is_fraud.astype(int),
-            "TransactionDT": tx_dt,
-            "TransactionAmt": tx_amt,
-            "ProductCD": product_cd,
-            "card1": card1.astype(float),
-            "card2": card2,
-            "card3": card3,
-            "card4": card4,
-            "card5": card5,
-            "card6": card6,
-            "addr1": addr1,
-            "addr2": addr2,
-            "dist1": dist1,
-            "dist2": dist2,
-            "P_emaildomain": p_email,
-            "R_emaildomain": r_email,
-            **c_cols,
-            **d_cols,
-            **m_cols,
-            **v_cols,
-        })
+        tx_df = pd.DataFrame(
+            {
+                "TransactionID": tx_ids,
+                "isFraud": is_fraud.astype(int),
+                "TransactionDT": tx_dt,
+                "TransactionAmt": tx_amt,
+                "ProductCD": product_cd,
+                "card1": card1.astype(float),
+                "card2": card2,
+                "card3": card3,
+                "card4": card4,
+                "card5": card5,
+                "card6": card6,
+                "addr1": addr1,
+                "addr2": addr2,
+                "dist1": dist1,
+                "dist2": dist2,
+                "P_emaildomain": p_email,
+                "R_emaildomain": r_email,
+                **c_cols,
+                **d_cols,
+                **m_cols,
+                **v_cols,
+            }
+        )
 
         # Build identity DataFrame (subset of transactions)
         n_id = int(n * 0.3)
         id_idx = rng.choice(tx_ids, size=n_id, replace=False)
         id_cols = {f"id_0{i}" if i < 10 else f"id_{i}": rng.standard_normal(n_id) for i in range(1, 12)}
-        id_cats = {
-            f"id_{i}": rng.choice(["T", "F", np.nan], size=n_id)
-            for i in range(12, 39)
-        }
-        id_df = pd.DataFrame({
-            "TransactionID": id_idx,
-            "DeviceType": rng.choice(["desktop", "mobile", np.nan], size=n_id),
-            "DeviceInfo": rng.choice(["Windows", "iOS Device", "MacOS", "Android", np.nan], size=n_id),
-            **id_cols,
-            **id_cats,
-        })
+        id_cats = {f"id_{i}": rng.choice(["T", "F", np.nan], size=n_id) for i in range(12, 39)}
+        id_df = pd.DataFrame(
+            {
+                "TransactionID": id_idx,
+                "DeviceType": rng.choice(["desktop", "mobile", np.nan], size=n_id),
+                "DeviceInfo": rng.choice(["Windows", "iOS Device", "MacOS", "Android", np.nan], size=n_id),
+                **id_cols,
+                **id_cats,
+            }
+        )
 
         return tx_df, id_df
 

@@ -57,8 +57,10 @@ def model_training(
     from sklearn.metrics import recall_score, precision_score, f1_score, roc_auc_score
 
     warnings.filterwarnings("ignore")
-    print(f"[model_training] Stage 5 – Training '{model_type}' "
-          f"(cost_sensitive={use_cost_sensitive}, fn_cost={fn_cost}) ...")
+    print(
+        f"[model_training] Stage 5 – Training '{model_type}' "
+        f"(cost_sensitive={use_cost_sensitive}, fn_cost={fn_cost}) ..."
+    )
 
     # ------------------------------------------------------------------ #
     # Load data                                                            #
@@ -76,8 +78,7 @@ def model_training(
 
     feature_names = train_df.drop(columns=["isFraud"]).columns.tolist()
     print(f"[model_training] Train shape: {X.shape}, Fraud rate: {y.mean():.4f}")
-    print(f"[model_training] Base scale_pos_weight: {base_spw:.2f} | "
-          f"Cost-sensitive: {cost_spw:.2f}")
+    print(f"[model_training] Base scale_pos_weight: {base_spw:.2f} | " f"Cost-sensitive: {cost_spw:.2f}")
 
     # Validation split for early stopping (last 15% of training rows)
     val_size = int(len(X) * 0.15)
@@ -107,7 +108,8 @@ def model_training(
             use_label_encoder=False,
         )
         model.fit(
-            X_tr, y_tr,
+            X_tr,
+            y_tr,
             eval_set=[(X_val, y_val)],
             verbose=False,
         )
@@ -141,7 +143,8 @@ def model_training(
                 verbose=-1,
             )
         model.fit(
-            X_tr, y_tr,
+            X_tr,
+            y_tr,
             eval_set=[(X_val, y_val)],
             callbacks=[lgb.early_stopping(50, verbose=False), lgb.log_evaluation(period=-1)],
         )
@@ -166,8 +169,9 @@ def model_training(
 
         # Step 2: Re-fit XGBoost on reduced feature set
         import xgboost as xgb
+
         print("[model_training] RF Hybrid – Step 2: XGBoost on reduced features...")
-        X_tr_reduced  = X_tr[:, sorted(top_idx)]
+        X_tr_reduced = X_tr[:, sorted(top_idx)]
         X_val_reduced = X_val[:, sorted(top_idx)]
 
         xgb_model = xgb.XGBClassifier(
@@ -184,7 +188,8 @@ def model_training(
             use_label_encoder=False,
         )
         xgb_model.fit(
-            X_tr_reduced, y_tr,
+            X_tr_reduced,
+            y_tr,
             eval_set=[(X_val_reduced, y_val)],
             verbose=False,
         )
@@ -220,17 +225,20 @@ def model_training(
         y_pred = model.predict(X)
         y_prob = model.predict_proba(X)[:, 1]
 
-    recall    = float(recall_score(y, y_pred, zero_division=0))
+    recall = float(recall_score(y, y_pred, zero_division=0))
     precision = float(precision_score(y, y_pred, zero_division=0))
-    f1        = float(f1_score(y, y_pred, zero_division=0))
-    auc       = float(roc_auc_score(y, y_prob))
+    f1 = float(f1_score(y, y_pred, zero_division=0))
+    auc = float(roc_auc_score(y, y_prob))
 
     # Business cost comparison
     from sklearn.metrics import confusion_matrix
+
     tn, fp, fn, tp = confusion_matrix(y, y_pred).ravel()
-    standard_cost  = fn_cost * fn + fp_cost * fp
-    print(f"[model_training] Train  – Recall: {recall:.4f} | AUC: {auc:.4f} "
-          f"| FN: {fn} | FP: {fp} | Business Cost: {standard_cost:.0f}")
+    standard_cost = fn_cost * fn + fp_cost * fp
+    print(
+        f"[model_training] Train  – Recall: {recall:.4f} | AUC: {auc:.4f} "
+        f"| FN: {fn} | FP: {fp} | Business Cost: {standard_cost:.0f}"
+    )
 
     # ------------------------------------------------------------------ #
     # SHAP feature importance (Task 9)                                    #
@@ -253,10 +261,12 @@ def model_training(
             shap_values = shap_values[1]  # class 1 (fraud)
 
         mean_abs_shap = np.abs(shap_values).mean(axis=0)
-        shap_df = pd.DataFrame({
-            "feature": feature_names[:len(mean_abs_shap)],
-            "mean_abs_shap": mean_abs_shap.tolist(),
-        }).sort_values("mean_abs_shap", ascending=False)
+        shap_df = pd.DataFrame(
+            {
+                "feature": feature_names[: len(mean_abs_shap)],
+                "mean_abs_shap": mean_abs_shap.tolist(),
+            }
+        ).sort_values("mean_abs_shap", ascending=False)
 
         top_shap = shap_df.head(20)
         print("[model_training] Top-5 SHAP features (fraud prediction):")
@@ -280,10 +290,12 @@ def model_training(
         elif model_type == "rf_hybrid":
             imps = model["xgb_model"].feature_importances_
 
-        shap_df = pd.DataFrame({
-            "feature": feature_names[:len(imps)],
-            "mean_abs_shap": imps.tolist(),
-        }).sort_values("mean_abs_shap", ascending=False)
+        shap_df = pd.DataFrame(
+            {
+                "feature": feature_names[: len(imps)],
+                "mean_abs_shap": imps.tolist(),
+            }
+        ).sort_values("mean_abs_shap", ascending=False)
         shap_report_data = {
             "model_type": model_type,
             "n_samples_explained": 0,

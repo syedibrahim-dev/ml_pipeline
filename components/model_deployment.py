@@ -39,8 +39,8 @@ def model_deployment(
         recall_data = json.load(f)
 
     fraud_recall = float(recall_data.get("fraud_recall", 0.0))
-    auc_roc      = float(recall_data.get("auc_roc", 0.0))
-    model_type   = recall_data.get("model_type", "unknown")
+    auc_roc = float(recall_data.get("auc_roc", 0.0))
+    model_type = recall_data.get("model_type", "unknown")
 
     print(f"[model_deployment] Model type      : {model_type}")
     print(f"[model_deployment] Fraud recall    : {fraud_recall:.4f}")
@@ -57,7 +57,7 @@ def model_deployment(
 
         # Create registry paths
         champion_dir = os.path.join(model_registry_path, "champion")
-        archive_dir  = os.path.join(model_registry_path, "archive")
+        archive_dir = os.path.join(model_registry_path, "archive")
         os.makedirs(champion_dir, exist_ok=True)
         os.makedirs(archive_dir, exist_ok=True)
 
@@ -75,7 +75,7 @@ def model_deployment(
 
         # Copy new champion
         src_model = os.path.join(trained_model.path, "model.joblib")
-        src_meta  = os.path.join(trained_model.path, "metadata.json")
+        src_meta = os.path.join(trained_model.path, "metadata.json")
         shutil.copy2(src_model, os.path.join(champion_dir, "model.joblib"))
         if os.path.exists(src_meta):
             shutil.copy2(src_meta, os.path.join(champion_dir, "metadata.json"))

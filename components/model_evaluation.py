@@ -47,9 +47,14 @@ def model_evaluation(
     import matplotlib.pyplot as plt
     import seaborn as sns
     from sklearn.metrics import (
-        precision_score, recall_score, f1_score, roc_auc_score,
-        confusion_matrix, average_precision_score,
-        precision_recall_curve, roc_curve,
+        precision_score,
+        recall_score,
+        f1_score,
+        roc_auc_score,
+        confusion_matrix,
+        average_precision_score,
+        precision_recall_curve,
+        roc_curve,
     )
 
     warnings.filterwarnings("ignore")
@@ -59,11 +64,11 @@ def model_evaluation(
     # Load data and model                                                  #
     # ------------------------------------------------------------------ #
     test_df = pd.read_csv(test_dataset.path)
-    X_test  = test_df.drop(columns=["isFraud"]).values.astype(np.float32)
-    y_test  = test_df["isFraud"].values.astype(int)
+    X_test = test_df.drop(columns=["isFraud"]).values.astype(np.float32)
+    y_test = test_df["isFraud"].values.astype(int)
 
     model_path = os.path.join(trained_model.path, "model.joblib")
-    meta_path  = os.path.join(trained_model.path, "metadata.json")
+    meta_path = os.path.join(trained_model.path, "metadata.json")
 
     model = joblib.load(model_path)
     with open(meta_path) as f:
@@ -76,10 +81,10 @@ def model_evaluation(
     # Predict                                                              #
     # ------------------------------------------------------------------ #
     if model_type == "rf_hybrid":
-        sel_idx  = model["selected_indices"]
-        X_test   = X_test[:, sel_idx]
+        sel_idx = model["selected_indices"]
+        X_test = X_test[:, sel_idx]
         pred_mdl = model["xgb_model"]
-        y_prob   = pred_mdl.predict_proba(X_test)[:, 1]
+        y_prob = pred_mdl.predict_proba(X_test)[:, 1]
     else:
         y_prob = model.predict_proba(X_test)[:, 1]
 
@@ -89,10 +94,10 @@ def model_evaluation(
     # Metrics (binary – fraud = positive class)                           #
     # ------------------------------------------------------------------ #
     precision = float(precision_score(y_test, y_pred, zero_division=0))
-    recall    = float(recall_score(y_test, y_pred, zero_division=0))
-    f1        = float(f1_score(y_test, y_pred, zero_division=0))
-    auc_roc   = float(roc_auc_score(y_test, y_prob))
-    avg_prec  = float(average_precision_score(y_test, y_prob))
+    recall = float(recall_score(y_test, y_pred, zero_division=0))
+    f1 = float(f1_score(y_test, y_pred, zero_division=0))
+    auc_roc = float(roc_auc_score(y_test, y_prob))
+    avg_prec = float(average_precision_score(y_test, y_prob))
 
     cm = confusion_matrix(y_test, y_pred)
     tn, fp, fn, tp = cm.ravel()
@@ -120,7 +125,10 @@ def model_evaluation(
     # 1. Confusion Matrix heatmap
     fig, ax = plt.subplots(figsize=(6, 5))
     sns.heatmap(
-        cm, annot=True, fmt="d", cmap="Blues",
+        cm,
+        annot=True,
+        fmt="d",
+        cmap="Blues",
         xticklabels=["Legit", "Fraud"],
         yticklabels=["Legit", "Fraud"],
         ax=ax,
@@ -164,8 +172,9 @@ def model_evaluation(
     # 4. Prediction confidence distribution
     fig, axes = plt.subplots(1, 2, figsize=(12, 4))
     for ax_i, (label, mask) in enumerate([(0, y_test == 0), (1, y_test == 1)]):
-        axes[ax_i].hist(y_prob[mask], bins=50, color="steelblue" if label == 0 else "tomato",
-                        edgecolor="white", alpha=0.8)
+        axes[ax_i].hist(
+            y_prob[mask], bins=50, color="steelblue" if label == 0 else "tomato", edgecolor="white", alpha=0.8
+        )
         axes[ax_i].set_title(f"Confidence Distribution – {'Legit' if label==0 else 'Fraud'}", fontsize=11)
         axes[ax_i].set_xlabel("Predicted Fraud Probability")
         axes[ax_i].set_ylabel("Count")

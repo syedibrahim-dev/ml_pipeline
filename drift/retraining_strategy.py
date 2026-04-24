@@ -30,6 +30,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Hybrid retraining strategy class                                    #
 # ------------------------------------------------------------------ #
 
+
 class HybridRetrainingStrategy:
     """
     Hybrid strategy: threshold-based trigger + periodic safety net.
@@ -43,19 +44,19 @@ class HybridRetrainingStrategy:
     def __init__(
         self,
         recall_threshold: float = 0.80,
-        drift_threshold:  float = 0.15,
-        period_days:      int   = 7,
-        name:             str   = "hybrid",
+        drift_threshold: float = 0.15,
+        period_days: int = 7,
+        name: str = "hybrid",
     ):
         self.recall_threshold = recall_threshold
-        self.drift_threshold  = drift_threshold
-        self.period_days      = period_days
-        self.name             = name
+        self.drift_threshold = drift_threshold
+        self.period_days = period_days
+        self.name = name
 
     def should_retrain(
         self,
-        current_recall:        float,
-        drift_score:           float,
+        current_recall: float,
+        drift_score: float,
         days_since_last_retrain: int,
     ) -> dict:
         """Return retrain decision with reason and urgency."""
@@ -87,9 +88,9 @@ class HybridRetrainingStrategy:
                 urgency = "scheduled"
 
         return {
-            "retrain":  bool(reasons),
-            "reasons":  reasons,
-            "urgency":  urgency,
+            "retrain": bool(reasons),
+            "reasons": reasons,
+            "urgency": urgency,
         }
 
 
@@ -97,10 +98,11 @@ class HybridRetrainingStrategy:
 # Simulation engine                                                    #
 # ------------------------------------------------------------------ #
 
+
 def simulate_90_days(
     strategy: HybridRetrainingStrategy,
     n_days: int = 90,
-    seed:   int = 42,
+    seed: int = 42,
 ) -> dict:
     """
     Simulate n_days of model serving + monitoring.
@@ -116,28 +118,28 @@ def simulate_90_days(
     rng = np.random.default_rng(seed)
 
     # Simulation parameters
-    initial_recall     = 0.92
-    drift_rate         = 0.004    # recall drops ~0.4% per day without retraining
-    drift_noise        = 0.005    # Gaussian noise on daily recall
-    post_retrain_recall = 0.90   # recall after retraining
-    retrain_cost       = 1.0     # 1 compute unit per retrain
+    initial_recall = 0.92
+    drift_rate = 0.004  # recall drops ~0.4% per day without retraining
+    drift_noise = 0.005  # Gaussian noise on daily recall
+    post_retrain_recall = 0.90  # recall after retraining
+    retrain_cost = 1.0  # 1 compute unit per retrain
 
     daily_log = []
     current_recall = initial_recall
-    ks_score       = 0.0
+    ks_score = 0.0
     days_since_retrain = 0
-    n_retrains     = 0
-    total_cost     = 0.0
+    n_retrains = 0
+    total_cost = 0.0
 
     for day in range(n_days):
         # Natural degradation
         current_recall -= drift_rate
         current_recall += rng.normal(0, drift_noise)
-        current_recall  = float(np.clip(current_recall, 0.0, 1.0))
+        current_recall = float(np.clip(current_recall, 0.0, 1.0))
 
         # KS drift score grows linearly (resets on retrain)
         ks_score += rng.uniform(0.005, 0.012)
-        ks_score  = min(ks_score, 0.5)
+        ks_score = min(ks_score, 0.5)
 
         # Query strategy
         decision = strategy.should_retrain(current_recall, ks_score, days_since_retrain)
@@ -147,38 +149,40 @@ def simulate_90_days(
             # Retrain: reset recall and drift
             current_recall = post_retrain_recall + rng.normal(0, 0.02)
             current_recall = float(np.clip(current_recall, 0.70, 0.98))
-            ks_score       = rng.uniform(0.0, 0.03)
+            ks_score = rng.uniform(0.0, 0.03)
             days_since_retrain = 0
-            n_retrains    += 1
-            total_cost    += retrain_cost
-            retrained      = True
+            n_retrains += 1
+            total_cost += retrain_cost
+            retrained = True
         else:
             days_since_retrain += 1
 
-        daily_log.append({
-            "day":            day + 1,
-            "recall":         round(current_recall, 4),
-            "ks_score":       round(ks_score, 4),
-            "retrained":      retrained,
-            "retrain_reason": ", ".join(decision["reasons"]) if retrained else "",
-            "urgency":        decision["urgency"] if retrained else "none",
-        })
+        daily_log.append(
+            {
+                "day": day + 1,
+                "recall": round(current_recall, 4),
+                "ks_score": round(ks_score, 4),
+                "retrained": retrained,
+                "retrain_reason": ", ".join(decision["reasons"]) if retrained else "",
+                "urgency": decision["urgency"] if retrained else "none",
+            }
+        )
 
     # Summary
     recalls = [d["recall"] for d in daily_log]
     recall_below_threshold = sum(1 for r in recalls if r < strategy.recall_threshold)
 
     return {
-        "strategy":       strategy.name,
-        "n_retrains":     n_retrains,
-        "total_cost":     round(total_cost, 2),
-        "avg_recall":     round(float(np.mean(recalls)), 4),
-        "min_recall":     round(float(np.min(recalls)), 4),
-        "max_recall":     round(float(np.max(recalls)), 4),
-        "recall_std":     round(float(np.std(recalls)), 4),
+        "strategy": strategy.name,
+        "n_retrains": n_retrains,
+        "total_cost": round(total_cost, 2),
+        "avg_recall": round(float(np.mean(recalls)), 4),
+        "min_recall": round(float(np.min(recalls)), 4),
+        "max_recall": round(float(np.max(recalls)), 4),
+        "recall_std": round(float(np.std(recalls)), 4),
         "days_below_threshold": recall_below_threshold,
         "stability_score": round(1.0 - float(np.std(recalls)), 4),
-        "daily_log":      daily_log,
+        "daily_log": daily_log,
     }
 
 
@@ -186,8 +190,9 @@ def simulate_90_days(
 # Compare all three strategies                                         #
 # ------------------------------------------------------------------ #
 
+
 def compare_strategies(
-    n_days:     int = 90,
+    n_days: int = 90,
     output_dir: str = "results/metrics",
 ) -> dict:
     """
@@ -197,16 +202,21 @@ def compare_strategies(
 
     strategies = [
         HybridRetrainingStrategy(
-            recall_threshold=0.80, drift_threshold=0.15,
+            recall_threshold=0.80,
+            drift_threshold=0.15,
             name="threshold_only",
         ),
         HybridRetrainingStrategy(
-            recall_threshold=0.80, drift_threshold=0.15,
-            period_days=7, name="periodic_only",
+            recall_threshold=0.80,
+            drift_threshold=0.15,
+            period_days=7,
+            name="periodic_only",
         ),
         HybridRetrainingStrategy(
-            recall_threshold=0.80, drift_threshold=0.15,
-            period_days=7, name="hybrid",
+            recall_threshold=0.80,
+            drift_threshold=0.15,
+            period_days=7,
+            name="hybrid",
         ),
     ]
 
@@ -219,26 +229,31 @@ def compare_strategies(
 
     # Print comparison table
     print("=" * 85)
-    print(f"  {'Strategy':<20} {'Retrains':>9} {'Cost':>7} {'Avg Recall':>11} "
-          f"{'Stability':>11} {'Days<Thresh':>12}")
+    print(
+        f"  {'Strategy':<20} {'Retrains':>9} {'Cost':>7} {'Avg Recall':>11} " f"{'Stability':>11} {'Days<Thresh':>12}"
+    )
     print("=" * 85)
     for r in results:
-        print(f"  {r['strategy']:<20} {r['n_retrains']:>9} {r['total_cost']:>7.1f} "
-              f"{r['avg_recall']:>11.4f} {r['stability_score']:>11.4f} "
-              f"{r['days_below_threshold']:>12}")
+        print(
+            f"  {r['strategy']:<20} {r['n_retrains']:>9} {r['total_cost']:>7.1f} "
+            f"{r['avg_recall']:>11.4f} {r['stability_score']:>11.4f} "
+            f"{r['days_below_threshold']:>12}"
+        )
     print("=" * 85)
 
     # Analysis
-    best_recall    = max(results, key=lambda x: x["avg_recall"])
+    best_recall = max(results, key=lambda x: x["avg_recall"])
     best_stability = max(results, key=lambda x: x["stability_score"])
-    lowest_cost    = min(results, key=lambda x: x["total_cost"])
+    lowest_cost = min(results, key=lambda x: x["total_cost"])
 
-    print(f"\n[analysis] Best avg recall   : '{best_recall['strategy']}' "
-          f"(recall={best_recall['avg_recall']:.4f})")
-    print(f"[analysis] Most stable        : '{best_stability['strategy']}' "
-          f"(stability={best_stability['stability_score']:.4f})")
-    print(f"[analysis] Lowest compute cost: '{lowest_cost['strategy']}' "
-          f"(cost={lowest_cost['total_cost']:.1f} units)")
+    print(f"\n[analysis] Best avg recall   : '{best_recall['strategy']}' " f"(recall={best_recall['avg_recall']:.4f})")
+    print(
+        f"[analysis] Most stable        : '{best_stability['strategy']}' "
+        f"(stability={best_stability['stability_score']:.4f})"
+    )
+    print(
+        f"[analysis] Lowest compute cost: '{lowest_cost['strategy']}' " f"(cost={lowest_cost['total_cost']:.1f} units)"
+    )
     print("\n[analysis] RECOMMENDATION: 'hybrid' strategy balances all three dimensions.")
 
     # Plot
@@ -250,10 +265,9 @@ def compare_strategies(
     colors = {"threshold_only": "tomato", "periodic_only": "steelblue", "hybrid": "green"}
 
     for r in results:
-        days    = [d["day"]    for d in r["daily_log"]]
+        days = [d["day"] for d in r["daily_log"]]
         recalls = [d["recall"] for d in r["daily_log"]]
-        axes[0].plot(days, recalls, color=colors[r["strategy"]],
-                     linewidth=1.5, label=r["strategy"], alpha=0.85)
+        axes[0].plot(days, recalls, color=colors[r["strategy"]], linewidth=1.5, label=r["strategy"], alpha=0.85)
 
     axes[0].axhline(y=0.80, linestyle="--", color="gray", linewidth=1, label="Threshold (0.80)")
     axes[0].set_xlabel("Day")
@@ -266,14 +280,14 @@ def compare_strategies(
     # Bar chart: summary stats
     x = np.arange(len(results))
     w = 0.25
-    labels   = [r["strategy"]     for r in results]
-    recalls  = [r["avg_recall"]   for r in results]
-    stabs    = [r["stability_score"] for r in results]
-    costs    = [r["total_cost"] / max(r["total_cost"] for r in results) for r in results]
+    labels = [r["strategy"] for r in results]
+    recalls = [r["avg_recall"] for r in results]
+    stabs = [r["stability_score"] for r in results]
+    costs = [r["total_cost"] / max(r["total_cost"] for r in results) for r in results]
 
-    axes[1].bar(x - w, recalls, w, label="Avg Recall",    color="steelblue",  alpha=0.8)
-    axes[1].bar(x,     stabs,   w, label="Stability",     color="green",      alpha=0.8)
-    axes[1].bar(x + w, costs,   w, label="Cost (norm.)",  color="tomato",     alpha=0.8)
+    axes[1].bar(x - w, recalls, w, label="Avg Recall", color="steelblue", alpha=0.8)
+    axes[1].bar(x, stabs, w, label="Stability", color="green", alpha=0.8)
+    axes[1].bar(x + w, costs, w, label="Cost (norm.)", color="tomato", alpha=0.8)
     axes[1].set_xticks(x)
     axes[1].set_xticklabels(labels, rotation=10)
     axes[1].set_ylim(0, 1.1)
@@ -290,10 +304,7 @@ def compare_strategies(
     # Save results
     output = {
         "simulation_days": n_days,
-        "strategies": [
-            {k: v for k, v in r.items() if k != "daily_log"}
-            for r in results
-        ],
+        "strategies": [{k: v for k, v in r.items() if k != "daily_log"} for r in results],
         "recommendation": "hybrid",
         "rationale": (
             "The hybrid strategy provides the best balance: "
@@ -318,7 +329,7 @@ def compare_strategies(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Retraining strategy comparison")
-    parser.add_argument("--days",   type=int, default=90, help="Simulation days")
+    parser.add_argument("--days", type=int, default=90, help="Simulation days")
     parser.add_argument("--output", default="results/metrics", help="Output directory")
     args = parser.parse_args()
 

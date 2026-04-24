@@ -2,11 +2,11 @@
 Model loader for the inference API.
 Loads the champion model and scaler from disk.
 """
+
 import json
 import os
 import joblib
 import numpy as np
-
 
 MODEL_REGISTRY = os.environ.get("MODEL_REGISTRY", "/tmp/fraud_model_registry")
 LOCAL_MODEL_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "results", "models")
@@ -26,7 +26,7 @@ class ModelLoader:
         """Try to load champion model from registry, then fall back to results/models/."""
         # Try champion registry first
         champion_path = os.path.join(MODEL_REGISTRY, "champion", "model.joblib")
-        meta_path     = os.path.join(MODEL_REGISTRY, "champion", "metadata.json")
+        meta_path = os.path.join(MODEL_REGISTRY, "champion", "metadata.json")
 
         if not os.path.exists(champion_path):
             # Fall back to latest model in results/models/

@@ -31,18 +31,18 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from kfp import dsl, compiler
 from kfp.dsl import pipeline
 
-from components.data_ingestion    import data_ingestion
-from components.data_validation   import data_validation
-from components.preprocessing     import preprocessing
+from components.data_ingestion import data_ingestion
+from components.data_validation import data_validation
+from components.preprocessing import preprocessing
 from components.feature_engineering import feature_engineering
-from components.model_training    import model_training
-from components.model_evaluation  import model_evaluation
-from components.model_deployment  import model_deployment
-
+from components.model_training import model_training
+from components.model_evaluation import model_evaluation
+from components.model_deployment import model_deployment
 
 # ------------------------------------------------------------------ #
 # Pipeline definition                                                 #
 # ------------------------------------------------------------------ #
+
 
 @dsl.pipeline(
     name="fraud-detection-pipeline",
@@ -58,10 +58,10 @@ def fraud_detection_pipeline(
     n_synthetic: int = 50000,
     fraud_rate: float = 0.035,
     # Preprocessing parameters
-    imbalance_method: str = "class_weight",   # "class_weight" | "smote"
+    imbalance_method: str = "class_weight",  # "class_weight" | "smote"
     test_size: float = 0.2,
     # Model parameters
-    model_type: str = "xgboost",              # "xgboost" | "lightgbm" | "rf_hybrid"
+    model_type: str = "xgboost",  # "xgboost" | "lightgbm" | "rf_hybrid"
     use_cost_sensitive: bool = True,
     fn_cost: float = 10.0,
     fp_cost: float = 1.0,
@@ -112,7 +112,7 @@ def fraud_detection_pipeline(
         test_size=test_size,
         random_state=random_state,
     )
-    preprocess_task.after(validate_task)   # explicitly wait for validation
+    preprocess_task.after(validate_task)  # explicitly wait for validation
     preprocess_task.set_display_name("3. Data Preprocessing")
     preprocess_task.set_retry(num_retries=2, backoff_duration="30s", backoff_factor=2.0)
     preprocess_task.set_cpu_request("1").set_memory_request("2Gi")
@@ -185,6 +185,7 @@ def fraud_detection_pipeline(
 # Compile + optional submit                                           #
 # ------------------------------------------------------------------ #
 
+
 def compile_pipeline(output_dir: str = "pipelines/compiled") -> str:
     """Compile the pipeline to YAML and return the output path."""
     os.makedirs(output_dir, exist_ok=True)
@@ -203,6 +204,7 @@ def submit_pipeline(
     """Submit a compiled pipeline to a running Kubeflow Pipelines instance."""
     try:
         import kfp
+
         client = kfp.Client(host=kfp_endpoint)
         run = client.create_run_from_pipeline_package(
             pipeline_file=pipeline_yaml,

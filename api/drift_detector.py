@@ -2,16 +2,15 @@
 Drift detector using Kolmogorov-Smirnov test.
 Compares current batch distributions to a reference (training) distribution.
 """
+
 import json
 import os
 import numpy as np
 import pandas as pd
 from scipy import stats
 
-
 REFERENCE_STATS_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(__file__)),
-    "results", "metrics", "reference_distribution.json"
+    os.path.dirname(os.path.dirname(__file__)), "results", "metrics", "reference_distribution.json"
 )
 
 
@@ -47,16 +46,15 @@ class KSDriftDetector:
                 continue
             reference[col] = {
                 "mean": float(np.mean(vals)),
-                "std":  float(np.std(vals)),
-                "p5":   float(np.percentile(vals, 5)),
-                "p25":  float(np.percentile(vals, 25)),
-                "p50":  float(np.percentile(vals, 50)),
-                "p75":  float(np.percentile(vals, 75)),
-                "p95":  float(np.percentile(vals, 95)),
-                "n":    len(vals),
+                "std": float(np.std(vals)),
+                "p5": float(np.percentile(vals, 5)),
+                "p25": float(np.percentile(vals, 25)),
+                "p50": float(np.percentile(vals, 50)),
+                "p75": float(np.percentile(vals, 75)),
+                "p95": float(np.percentile(vals, 95)),
+                "n": len(vals),
                 # Store 200 samples for KS test
-                "sample": np.random.default_rng(42).choice(vals, min(200, len(vals)),
-                                                            replace=False).tolist(),
+                "sample": np.random.default_rng(42).choice(vals, min(200, len(vals)), replace=False).tolist(),
             }
         os.makedirs(os.path.dirname(self.reference_path), exist_ok=True)
         with open(self.reference_path, "w") as f:
@@ -92,10 +90,10 @@ class KSDriftDetector:
 
             feature_scores[col] = {
                 "ks_statistic": round(float(ks_stat), 4),
-                "p_value":      round(float(p_value), 6),
-                "drifted":      bool(is_drifted),
-                "ref_mean":     round(ref_stats["mean"], 4),
-                "curr_mean":    round(float(np.mean(curr_vals)), 4),
+                "p_value": round(float(p_value), 6),
+                "drifted": bool(is_drifted),
+                "ref_mean": round(ref_stats["mean"], 4),
+                "curr_mean": round(float(np.mean(curr_vals)), 4),
             }
             if is_drifted:
                 drifted_features.append(col)
@@ -104,7 +102,7 @@ class KSDriftDetector:
         drift_detected = len(drifted_features) > 0
 
         return {
-            "drift_detected":  drift_detected,
+            "drift_detected": drift_detected,
             "n_features_checked": len(feature_scores),
             "n_drifted_features": len(drifted_features),
             "drifted_features": drifted_features[:10],

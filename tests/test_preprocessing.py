@@ -21,33 +21,36 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Helpers                                                              #
 # ------------------------------------------------------------------ #
 
+
 def make_full_df(n: int = 1000, fraud_rate: float = 0.05, seed: int = 42) -> pd.DataFrame:
     """Return a DataFrame with the full schema used by preprocessing."""
     rng = np.random.default_rng(seed)
     n_fraud = max(2, int(n * fraud_rate))
     n_legit = n - n_fraud
-    labels  = np.array([0] * n_legit + [1] * n_fraud)
+    labels = np.array([0] * n_legit + [1] * n_fraud)
     rng.shuffle(labels)
 
     v_data = rng.standard_normal((n, 10)).astype(float)
     v_data[rng.random((n, 10)) < 0.40] = np.nan
 
-    return pd.DataFrame({
-        "TransactionDT":  rng.integers(100, 15_000_000, size=n),
-        "TransactionAmt": rng.lognormal(4.0, 1.5, size=n).round(2),
-        "card1":  rng.integers(1000, 18500, size=n).astype(float),
-        "card2":  rng.choice([float("nan")] + list(range(100, 600)), size=n),
-        "addr1":  rng.choice(list(range(100, 500)) + [float("nan")], size=n),
-        "addr2":  rng.choice(list(range(10, 102)) + [float("nan")], size=n),
-        "P_emaildomain": rng.choice(["gmail.com", "yahoo.com", float("nan")], size=n),
-        "R_emaildomain": rng.choice(["gmail.com", "hotmail.com", float("nan")], size=n),
-        **{f"C{i}": rng.integers(0, 200, size=n).astype(float) for i in range(1, 5)},
-        **{f"D{i}": rng.choice(list(range(0, 300)) + [float("nan")] * 100, size=n) for i in range(1, 4)},
-        **{f"M{i}": rng.choice(["T", "F", float("nan")], size=n) for i in range(1, 4)},
-        **{f"V{i}": v_data[:, i - 1] for i in range(1, 11)},
-        "ProductCD": rng.choice(["W", "H", "C"], size=n),
-        "isFraud":   labels,
-    })
+    return pd.DataFrame(
+        {
+            "TransactionDT": rng.integers(100, 15_000_000, size=n),
+            "TransactionAmt": rng.lognormal(4.0, 1.5, size=n).round(2),
+            "card1": rng.integers(1000, 18500, size=n).astype(float),
+            "card2": rng.choice([float("nan")] + list(range(100, 600)), size=n),
+            "addr1": rng.choice(list(range(100, 500)) + [float("nan")], size=n),
+            "addr2": rng.choice(list(range(10, 102)) + [float("nan")], size=n),
+            "P_emaildomain": rng.choice(["gmail.com", "yahoo.com", float("nan")], size=n),
+            "R_emaildomain": rng.choice(["gmail.com", "hotmail.com", float("nan")], size=n),
+            **{f"C{i}": rng.integers(0, 200, size=n).astype(float) for i in range(1, 5)},
+            **{f"D{i}": rng.choice(list(range(0, 300)) + [float("nan")] * 100, size=n) for i in range(1, 4)},
+            **{f"M{i}": rng.choice(["T", "F", float("nan")], size=n) for i in range(1, 4)},
+            **{f"V{i}": v_data[:, i - 1] for i in range(1, 11)},
+            "ProductCD": rng.choice(["W", "H", "C"], size=n),
+            "isFraud": labels,
+        }
+    )
 
 
 def temporal_split(df, test_size=0.2):
@@ -59,6 +62,7 @@ def temporal_split(df, test_size=0.2):
 # ------------------------------------------------------------------ #
 # Tests: Missing value imputation                                     #
 # ------------------------------------------------------------------ #
+
 
 class TestMissingValueImputation:
     def test_v_columns_filled_after_imputation(self):
@@ -110,6 +114,7 @@ class TestMissingValueImputation:
 # Tests: Frequency encoding                                           #
 # ------------------------------------------------------------------ #
 
+
 class TestFrequencyEncoding:
     def test_card1_frequency_encoded_as_float(self):
         df = make_full_df()
@@ -150,6 +155,7 @@ class TestFrequencyEncoding:
 # Tests: Target encoding                                              #
 # ------------------------------------------------------------------ #
 
+
 class TestTargetEncoding:
     def test_email_domain_encoded_as_float(self):
         df = make_full_df()
@@ -183,16 +189,18 @@ class TestTargetEncoding:
         stats = df.groupby("P_emaildomain")["isFraud"].agg(["sum", "count"])
         enc = (stats["sum"] + k * gfr) / (stats["count"] + k)
 
-        assert enc["bad.com"] > enc["good.com"], (
-            f"bad.com ({enc['bad.com']:.3f}) should encode higher than good.com ({enc['good.com']:.3f})"
-        )
+        assert (
+            enc["bad.com"] > enc["good.com"]
+        ), f"bad.com ({enc['bad.com']:.3f}) should encode higher than good.com ({enc['good.com']:.3f})"
 
     def test_smoothing_prevents_extreme_values(self):
         """With k=10 smoothing, rare domains don't get extreme encoding."""
-        df = pd.DataFrame({
-            "P_emaildomain": ["rare.com"] + ["common.com"] * 500,
-            "isFraud":       [1]          + [0] * 500,
-        })
+        df = pd.DataFrame(
+            {
+                "P_emaildomain": ["rare.com"] + ["common.com"] * 500,
+                "isFraud": [1] + [0] * 500,
+            }
+        )
         k = 10.0
         gfr = df["isFraud"].mean()
         stats = df.groupby("P_emaildomain")["isFraud"].agg(["sum", "count"])
@@ -205,6 +213,7 @@ class TestTargetEncoding:
 # ------------------------------------------------------------------ #
 # Tests: Class imbalance                                              #
 # ------------------------------------------------------------------ #
+
 
 class TestClassImbalance:
     def test_class_weight_dict_computed_correctly(self):
@@ -260,6 +269,7 @@ class TestClassImbalance:
 # Tests: Temporal split                                               #
 # ------------------------------------------------------------------ #
 
+
 class TestTemporalSplit:
     def test_split_is_temporal_not_random(self):
         df = make_full_df(n=1000)
@@ -277,6 +287,6 @@ class TestTemporalSplit:
         df = make_full_df(n=1000)
         thresh = df["TransactionDT"].quantile(0.8)
         train = df[df["TransactionDT"] <= thresh]
-        test  = df[df["TransactionDT"] >  thresh]
+        test = df[df["TransactionDT"] > thresh]
         overlap = set(train.index) & set(test.index)
         assert len(overlap) == 0, "Train and test should not share any rows"

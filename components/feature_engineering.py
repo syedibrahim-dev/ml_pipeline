@@ -44,13 +44,13 @@ def feature_engineering(
     print("[feature_engineering] Stage 4 – Feature Engineering starting...")
 
     train_df = pd.read_csv(train_dataset.path)
-    test_df  = pd.read_csv(test_dataset.path)
+    test_df = pd.read_csv(test_dataset.path)
 
     print(f"[feature_engineering] Input shapes: train {train_df.shape}, test {test_df.shape}")
 
     target = "isFraud"
     y_train = train_df[target].copy()
-    y_test  = test_df[target].copy()
+    y_test = test_df[target].copy()
 
     # ------------------------------------------------------------------ #
     # The input data from preprocessing is already scaled, so we work     #
@@ -82,9 +82,9 @@ def feature_engineering(
         for grp_name, cols in v_groups.items():
             present = [c for c in cols if c in df.columns]
             if present:
-                df[f"{grp_name}_sum"]  = df[present].sum(axis=1)
+                df[f"{grp_name}_sum"] = df[present].sum(axis=1)
                 df[f"{grp_name}_mean"] = df[present].mean(axis=1)
-                df[f"{grp_name}_std"]  = df[present].std(axis=1).fillna(0)
+                df[f"{grp_name}_std"] = df[present].std(axis=1).fillna(0)
 
         # -------------------------------------------------------------- #
         # Missing indicator aggregate: count of missing V flags per row  #
@@ -105,7 +105,7 @@ def feature_engineering(
         # -------------------------------------------------------------- #
         c_cols = [f"C{i}" for i in range(1, 15) if f"C{i}" in df.columns]
         if c_cols:
-            df["C_sum"]  = df[c_cols].sum(axis=1)
+            df["C_sum"] = df[c_cols].sum(axis=1)
             df["C_mean"] = df[c_cols].mean(axis=1)
 
         # -------------------------------------------------------------- #
@@ -117,11 +117,11 @@ def feature_engineering(
         return df
 
     train_fe = add_features(train_df)
-    test_fe  = add_features(test_df, ref_df=train_df)
+    test_fe = add_features(test_df, ref_df=train_df)
 
     # Align columns (test may differ after feature addition)
     fe_cols = [c for c in train_fe.columns if c != target]
-    test_fe  = test_fe.reindex(columns=train_fe.columns, fill_value=0)
+    test_fe = test_fe.reindex(columns=train_fe.columns, fill_value=0)
 
     print(f"[feature_engineering] After feature engineering: {train_fe.shape[1]} columns")
 
@@ -139,7 +139,7 @@ def feature_engineering(
         print(f"[feature_engineering] Removed {len(removed_cols)} near-zero variance features")
 
     X_train_fe = X_train_fe[kept_cols]
-    X_test_fe  = test_fe.drop(columns=[target])[kept_cols]
+    X_test_fe = test_fe.drop(columns=[target])[kept_cols]
 
     # ------------------------------------------------------------------ #
     # RF feature importance report (fit quick RF on train)               #
@@ -155,10 +155,12 @@ def feature_engineering(
     rf.fit(X_train_fe.values, y_train.values)
 
     importances = rf.feature_importances_
-    feat_imp_df = pd.DataFrame({
-        "feature": kept_cols,
-        "importance": importances,
-    }).sort_values("importance", ascending=False)
+    feat_imp_df = pd.DataFrame(
+        {
+            "feature": kept_cols,
+            "importance": importances,
+        }
+    ).sort_values("importance", ascending=False)
 
     top_features = feat_imp_df.head(n_top_features)
     print("[feature_engineering] Top-5 features by RF importance:")

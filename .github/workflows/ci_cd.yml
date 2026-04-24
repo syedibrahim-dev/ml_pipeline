@@ -49,7 +49,6 @@ jobs:
 
       - name: Lint with flake8
         run: |
-          # Stop on syntax errors; warn on style issues
           flake8 components/ api/ drift/ tests/ \
             --max-line-length=120 \
             --ignore=E501,W503,W504 \
@@ -60,8 +59,13 @@ jobs:
         run: |
           black --check --diff \
             components/ api/ drift/ tests/ pipelines/ \
-            --line-length=120 \
-            || echo "Black formatting issues found (non-blocking for now)"
+            --line-length=120
+
+      - name: Lint Dockerfile with hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          failure-threshold: error
 
       - name: Run unit tests with coverage
         run: |

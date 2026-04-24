@@ -18,6 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Helpers                                                              #
 # ------------------------------------------------------------------ #
 
+
 def make_tx_df(
     n: int = 500,
     fraud_rate: float = 0.035,
@@ -31,13 +32,15 @@ def make_tx_df(
     labels = np.array([0] * n_legit + [1] * n_fraud)
     rng.shuffle(labels)
 
-    df = pd.DataFrame({
-        "TransactionID":  np.arange(1000, 1000 + n),
-        "isFraud":        labels,
-        "TransactionDT":  rng.integers(100, 15_000_000, size=n),
-        "TransactionAmt": rng.lognormal(4.0, 1.5, size=n).round(2),
-        "ProductCD":      rng.choice(["W", "H", "C"], size=n),
-    })
+    df = pd.DataFrame(
+        {
+            "TransactionID": np.arange(1000, 1000 + n),
+            "isFraud": labels,
+            "TransactionDT": rng.integers(100, 15_000_000, size=n),
+            "TransactionAmt": rng.lognormal(4.0, 1.5, size=n).round(2),
+            "ProductCD": rng.choice(["W", "H", "C"], size=n),
+        }
+    )
     if include_v:
         for i in range(1, 6):
             vals = rng.standard_normal(n).astype(float)
@@ -50,6 +53,7 @@ def make_tx_df(
 # Validation logic (mirrors component logic, extracted for unit tests) #
 # ------------------------------------------------------------------ #
 
+
 def run_validation(tx_df: pd.DataFrame, id_df: pd.DataFrame = None) -> dict:
     """Run the same validation checks as data_validation component."""
     if id_df is None:
@@ -59,7 +63,7 @@ def run_validation(tx_df: pd.DataFrame, id_df: pd.DataFrame = None) -> dict:
             id_df = pd.DataFrame({"TransactionID": []})
 
     REQUIRED = ["TransactionID", "isFraud", "TransactionDT", "TransactionAmt", "ProductCD"]
-    issues   = []
+    issues = []
     warnings_list = []
 
     # Check 1: schema
@@ -104,15 +108,16 @@ def run_validation(tx_df: pd.DataFrame, id_df: pd.DataFrame = None) -> dict:
             issues.append(f"{n_dup} duplicate TransactionIDs")
 
     return {
-        "issues":   issues,
+        "issues": issues,
         "warnings": warnings_list,
-        "passed":   len(issues) == 0,
+        "passed": len(issues) == 0,
     }
 
 
 # ------------------------------------------------------------------ #
 # Tests                                                                #
 # ------------------------------------------------------------------ #
+
 
 class TestSchemaValidation:
     def test_valid_schema_passes(self):

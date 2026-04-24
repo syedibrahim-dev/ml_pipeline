@@ -34,7 +34,11 @@ def data_validation(
 
     # Required columns in the transaction table
     REQUIRED_TX_COLS = [
-        "TransactionID", "isFraud", "TransactionDT", "TransactionAmt", "ProductCD",
+        "TransactionID",
+        "isFraud",
+        "TransactionDT",
+        "TransactionAmt",
+        "ProductCD",
     ]
 
     issues = []
@@ -83,9 +87,7 @@ def data_validation(
         fraud_rate = tx_df["isFraud"].mean()
         print(f"[data_validation] Fraud rate: {fraud_rate:.4f}")
         if fraud_rate < min_fraud_rate or fraud_rate > max_fraud_rate:
-            issues.append(
-                f"Fraud rate {fraud_rate:.4f} outside [{min_fraud_rate}, {max_fraud_rate}]"
-            )
+            issues.append(f"Fraud rate {fraud_rate:.4f} outside [{min_fraud_rate}, {max_fraud_rate}]")
         else:
             checks_passed += 1
             print(f"[data_validation] PASS – Fraud rate {fraud_rate:.4f} within bounds")
@@ -163,9 +165,7 @@ def data_validation(
     # ------------------------------------------------------------------ #
     # Summary statistics for the report                                   #
     # ------------------------------------------------------------------ #
-    top_missing = (
-        missing_pct.sort_values(ascending=False).head(10).round(4).to_dict()
-    )
+    top_missing = missing_pct.sort_values(ascending=False).head(10).round(4).to_dict()
 
     # V-feature group missing rates
     v_cols = [c for c in tx_df.columns if c.startswith("V")]

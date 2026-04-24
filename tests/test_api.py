@@ -17,12 +17,14 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Client fixture                                                        #
 # ------------------------------------------------------------------ #
 
+
 @pytest.fixture(scope="module")
 def client():
     """Return a FastAPI TestClient for the fraud detection API."""
     try:
         from fastapi.testclient import TestClient
         from api.main import app
+
         return TestClient(app)
     except ImportError:
         pytest.skip("fastapi or httpx not installed")
@@ -37,6 +39,7 @@ def sample_features(n_features: int = 20) -> dict:
 # ------------------------------------------------------------------ #
 # /health                                                              #
 # ------------------------------------------------------------------ #
+
 
 class TestHealthEndpoint:
     def test_health_returns_200(self, client):
@@ -64,6 +67,7 @@ class TestHealthEndpoint:
 # ------------------------------------------------------------------ #
 # /predict                                                             #
 # ------------------------------------------------------------------ #
+
 
 class TestPredictEndpoint:
     def test_predict_returns_200(self, client):
@@ -99,10 +103,7 @@ class TestPredictEndpoint:
         assert data["latency_ms"] >= 0
 
     def test_predict_echoes_transaction_id(self, client):
-        r = client.post("/predict", json={
-            "features": sample_features(),
-            "transaction_id": "TX-999"
-        })
+        r = client.post("/predict", json={"features": sample_features(), "transaction_id": "TX-999"})
         data = r.json()
         assert data.get("transaction_id") == "TX-999"
 
@@ -121,6 +122,7 @@ class TestPredictEndpoint:
 # ------------------------------------------------------------------ #
 # /predict/batch                                                       #
 # ------------------------------------------------------------------ #
+
 
 class TestBatchPredictEndpoint:
     def test_batch_predict_returns_200(self, client):
@@ -145,6 +147,7 @@ class TestBatchPredictEndpoint:
 # ------------------------------------------------------------------ #
 # /metrics                                                             #
 # ------------------------------------------------------------------ #
+
 
 class TestMetricsEndpoint:
     def test_metrics_returns_200(self, client):
@@ -171,6 +174,7 @@ class TestMetricsEndpoint:
 # /model/info                                                          #
 # ------------------------------------------------------------------ #
 
+
 class TestModelInfoEndpoint:
     def test_model_info_returns_200(self, client):
         r = client.get("/model/info")
@@ -190,6 +194,7 @@ class TestModelInfoEndpoint:
 # ------------------------------------------------------------------ #
 # /drift/check                                                         #
 # ------------------------------------------------------------------ #
+
 
 class TestDriftCheckEndpoint:
     def test_drift_check_returns_200(self, client):

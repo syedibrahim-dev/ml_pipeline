@@ -27,8 +27,11 @@ import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import Response
 from prometheus_client import (
-    Counter, Gauge, Histogram,
-    generate_latest, CONTENT_TYPE_LATEST,
+    Counter,
+    Gauge,
+    Histogram,
+    generate_latest,
+    CONTENT_TYPE_LATEST,
     REGISTRY,
 )
 from pydantic import BaseModel
@@ -80,19 +83,23 @@ MISSING_VALUE_RATE = Gauge(
 # Pydantic models                                                      #
 # ------------------------------------------------------------------ #
 
+
 class PredictRequest(BaseModel):
     """Single transaction prediction request."""
+
     features: Dict[str, Any]
     transaction_id: Optional[str] = None
 
 
 class BatchPredictRequest(BaseModel):
     """Batch prediction request."""
+
     transactions: List[Dict[str, Any]]
 
 
 class DriftCheckRequest(BaseModel):
     """Drift detection request for a batch of feature vectors."""
+
     batch: List[Dict[str, Any]]
 
 
@@ -100,10 +107,12 @@ class DriftCheckRequest(BaseModel):
 # Application lifespan                                                 #
 # ------------------------------------------------------------------ #
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Load model on startup."""
     from api.model_loader import loader
+
     loader.load()
     # Initialise recall / FPR gauges with neutral values
     RECALL_GAUGE.set(0.0)
@@ -128,6 +137,7 @@ app = FastAPI(
 # Helper: feature dict → numpy array                                  #
 # ------------------------------------------------------------------ #
 
+
 def features_to_array(features: Dict[str, Any]) -> np.ndarray:
     """Convert feature dict to a float32 numpy row vector."""
     values = []
@@ -143,10 +153,12 @@ def features_to_array(features: Dict[str, Any]) -> np.ndarray:
 # Endpoints                                                            #
 # ------------------------------------------------------------------ #
 
+
 @app.get("/health")
 def health_check():
     """Health check endpoint for load balancer and monitoring."""
     from api.model_loader import loader
+
     return {
         "status": "healthy",
         "model_loaded": loader.is_loaded,
@@ -196,11 +208,11 @@ def predict(request: PredictRequest):
         REQUEST_LATENCY.labels(endpoint=endpoint).observe(latency)
 
         return {
-            "transaction_id":   request.transaction_id,
+            "transaction_id": request.transaction_id,
             "fraud_probability": round(fraud_prob, 6),
-            "is_fraud":         bool(is_fraud),
-            "confidence":       confidence,
-            "latency_ms":       round(latency * 1000, 2),
+            "is_fraud": bool(is_fraud),
+            "confidence": confidence,
+            "latency_ms": round(latency * 1000, 2),
         }
 
     except Exception as e:
@@ -225,11 +237,13 @@ def predict_batch(request: BatchPredictRequest):
             FRAUD_PROBABILITY.observe(fraud_prob)
             if is_fraud:
                 FRAUD_DETECTED.inc()
-            results.append({
-                "index": i,
-                "fraud_probability": round(fraud_prob, 6),
-                "is_fraud": bool(is_fraud),
-            })
+            results.append(
+                {
+                    "index": i,
+                    "fraud_probability": round(fraud_prob, 6),
+                    "is_fraud": bool(is_fraud),
+                }
+            )
 
         REQUEST_COUNT.labels(method="POST", endpoint=endpoint, status="200").inc()
         REQUEST_LATENCY.labels(endpoint=endpoint).observe(time.time() - start)
@@ -237,8 +251,8 @@ def predict_batch(request: BatchPredictRequest):
         fraud_rate = sum(1 for r in results if r["is_fraud"]) / max(len(results), 1)
         return {
             "n_transactions": len(results),
-            "fraud_rate":     round(fraud_rate, 4),
-            "predictions":    results,
+            "fraud_rate": round(fraud_rate, 4),
+            "predictions": results,
         }
 
     except Exception as e:
@@ -250,11 +264,12 @@ def predict_batch(request: BatchPredictRequest):
 def model_info():
     """Return model metadata."""
     from api.model_loader import loader
+
     return {
-        "model_type":  loader.model_type,
-        "is_loaded":   loader.is_loaded,
-        "metadata":    loader.metadata,
-        "registry":    os.environ.get("MODEL_REGISTRY", "/tmp/fraud_model_registry"),
+        "model_type": loader.model_type,
+        "is_loaded": loader.is_loaded,
+        "metadata": loader.metadata,
+        "registry": os.environ.get("MODEL_REGISTRY", "/tmp/fraud_model_registry"),
     }
 
 
@@ -317,6 +332,7 @@ ALERT_TRIGGER_COUNT = Counter(
 
 class AlertManagerWebhook(BaseModel):
     """AlertManager webhook payload."""
+
     alerts: List[Dict[str, Any]] = []
     status: Optional[str] = None
 
@@ -335,7 +351,7 @@ def alert_webhook(payload: AlertManagerWebhook):
     import json as json_lib
 
     github_token = os.environ.get("GITHUB_TOKEN", "")
-    github_repo  = os.environ.get("GITHUB_REPO", "")
+    github_repo = os.environ.get("GITHUB_REPO", "")
 
     TRIGGER_ALERTS = {"FraudRecallDrop", "FeatureDriftDetected"}
 
@@ -347,11 +363,7 @@ def alert_webhook(payload: AlertManagerWebhook):
         if alert_name not in TRIGGER_ALERTS or alert_status != "firing":
             continue
 
-        event_type = (
-            "model-performance-drop"
-            if alert_name == "FraudRecallDrop"
-            else "drift-detected"
-        )
+        event_type = "model-performance-drop" if alert_name == "FraudRecallDrop" else "drift-detected"
 
         if not github_token or not github_repo:
             print(f"[alert/webhook] {alert_name} fired — GITHUB_TOKEN/GITHUB_REPO not set, skipping trigger")
@@ -359,9 +371,9 @@ def alert_webhook(payload: AlertManagerWebhook):
             continue
 
         # Call GitHub repository_dispatch API
-        url  = f"https://api.github.com/repos/{github_repo}/dispatches"
+        url = f"https://api.github.com/repos/{github_repo}/dispatches"
         body = json_lib.dumps({"event_type": event_type}).encode()
-        req  = urllib.request.Request(
+        req = urllib.request.Request(
             url,
             data=body,
             headers={
